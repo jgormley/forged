@@ -1,0 +1,33 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(which gh && gh --version 2>/dev/null || echo \"not installed\")",
+      "Bash(which brew && brew --version 2>/dev/null || echo \"homebrew not found\")",
+      "WebSearch",
+      "WebFetch(domain:expo.dev)",
+      "WebFetch(domain:docs.expo.dev)",
+      "WebFetch(domain:evanbacon.dev)",
+      "WebFetch(domain:medium.com)",
+      "WebFetch(domain:www.callstack.com)",
+      "WebFetch(domain:www.peterarontoth.com)",
+      "WebFetch(domain:thereactnativerewind.com)",
+      "Bash(npx create-expo-app@latest . --template blank-typescript 2>&1)",
+      "Bash(cp -r /Users/josh/projects/forged-scaffold/. /Users/josh/projects/forged/ && rm -rf /Users/josh/projects/forged-scaffold && ls /Users/josh/projects/forged/)",
+      "Bash(npx expo upgrade 55 2>&1)",
+      "Bash(npm install 2>&1 | tail -5)",
+      "Bash(npm install @expo/cli --prefix /Users/josh/projects/forged 2>&1 | tail -5)",
+      "Bash(./node_modules/.bin/expo --version 2>&1)",
+      "Bash(npm install expo@beta --prefix /Users/josh/projects/forged 2>&1 | tail -10)",
+      "Bash(npm view expo dist-tags 2>&1)",
+      "Bash(npm install expo@next --prefix /Users/josh/projects/forged 2>&1 | tail -5)",
+      "Bash(./node_modules/.bin/expo install react-native@0.79.0 react@19.0.0 2>&1 | tail -10)",
+      "Bash(./node_modules/.bin/expo install expo-router expo-sqlite expo-haptics expo-notifications expo-dev-client expo-status-bar 2>&1 | tail -10)",
+      "Bash(./node_modules/.bin/expo install react-native-reanimated react-native-worklets react-native-gesture-handler 2>&1 | tail -10)",
+      "Bash(npm install react-native-reanimated react-native-worklets react-native-gesture-handler --prefix /Users/josh/projects/forged 2>&1 | tail -5)",
+      "Bash(npm install react-native-reanimated react-native-worklets react-native-gesture-handler --prefix /Users/josh/projects/forged --legacy-peer-deps 2>&1 | tail -8)",
+      "Bash(npm install zustand drizzle-orm drizzle-kit react-native-purchases victory-native @shopify/react-native-skia --prefix /Users/josh/projects/forged --legacy-peer-deps 2>&1 | tail -5)",
+      "Bash(npm install expo-widgets @expo/ui --prefix /Users/josh/projects/forged --legacy-peer-deps 2>&1 | tail -8)",
+      "Bash(git init && cat > .gitignore << 'EOF'\nnode_modules/\n.expo/\ndist/\nnpm-debug.*\n*.jks\n*.p8\n*.p12\n*.key\n*.mobileprovision\n*.orig.*\nweb-build/\n.DS_Store\n*.env\ngoogle-service-account.json\nios/\nandroid/\nEOF\ngit add -A && git commit -m \"Initial scaffold: Expo SDK 55, expo-router, Drizzle, Reanimated 4, Zustand\")"
+    ]
+  }
+}
