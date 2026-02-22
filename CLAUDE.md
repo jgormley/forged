@@ -103,46 +103,102 @@ Full spec: `forged-project-context.md`.
 
 9. **Dark mode is automatic** via `adaptiveThemes: true`. Do not use `ColorScheme` hooks.
 
+10. **Always use `theme.font.family.*` for fontFamily**. Never hardcode font family strings:
+    ```ts
+    // ✅ correct
+    fontFamily: theme.font.family.display,
+    // ❌ wrong
+    fontFamily: 'CormorantUpright_700Bold',
+    ```
+
 10. **Animated themes** (Reanimated 4): if a style property needs to animate between themes,
     use `useAnimatedTheme()` from `react-native-unistyles` instead of `useStyles()`.
 
 ### Design token quick reference
 
 ```ts
-// Spacing
-theme.spacing.xs  // 4
-theme.spacing.sm  // 8
-theme.spacing.md  // 16
-theme.spacing.lg  // 24
-theme.spacing.xl  // 32
-theme.spacing.xxl // 48
-theme.spacing.xxxl // 64
+// ── Spacing ──────────────────────────────────────────────────────────────────
+theme.spacing.xs    // 4
+theme.spacing.sm    // 8
+theme.spacing.md    // 16
+theme.spacing.lg    // 24
+theme.spacing.xl    // 32
+theme.spacing.xxl   // 48
+theme.spacing.xxxl  // 64
 
-// Border radius
-theme.radius.xs   // 4
-theme.radius.sm   // 8
-theme.radius.md   // 12
-theme.radius.lg   // 16
-theme.radius.xl   // 24
-theme.radius.full // 9999
+// ── Border radius ────────────────────────────────────────────────────────────
+theme.radius.xs    // 4
+theme.radius.sm    // 8
+theme.radius.md    // 16
+theme.radius.lg    // 24
+theme.radius.pill  // 100  ← buttons, tags, pills
+theme.radius.full  // 9999 ← circular
 
-// Font sizes
-theme.font.size.xs  // 11
-theme.font.size.sm  // 13
-theme.font.size.md  // 15  ← body default
-theme.font.size.lg  // 17  ← large body / subheading
-theme.font.size.xl  // 22
-theme.font.size.xxl // 28
+// ── Font families (always use these — never hardcode family strings) ─────────
+theme.font.family.display        // 'CormorantUpright_700Bold'   — headlines, numbers
+theme.font.family.displayMedium  // 'CormorantUpright_600SemiBold'
+theme.font.family.displayLight   // 'CormorantUpright_400Regular'
+theme.font.family.italic         // 'Cormorant_600SemiBold_Italic' — motivational quotes
+theme.font.family.italicLight    // 'Cormorant_400Regular_Italic'
+theme.font.family.body           // 'CrimsonPro_400Regular'  ← default body
+theme.font.family.bodyMedium     // 'CrimsonPro_500Medium'
+theme.font.family.bodySemiBold   // 'CrimsonPro_600SemiBold'
+theme.font.family.bodyBold       // 'CrimsonPro_700Bold'
+
+// ── Font sizes ───────────────────────────────────────────────────────────────
+theme.font.size.xs      // 11
+theme.font.size.sm      // 13
+theme.font.size.md      // 15  ← body default
+theme.font.size.lg      // 17  ← large body / subheading
+theme.font.size.xl      // 22
+theme.font.size.xxl     // 28
 theme.font.size.display // 36
 
-// Brand color
-theme.colors.accent       // #FF6B35 (orange)
-theme.colors.accentSubtle // #FF6B3520 / #FF6B3530
+// ── Colors ───────────────────────────────────────────────────────────────────
+// Backgrounds
+theme.colors.background    // light: #E8E3D8 cream  | dark: #12100C char
+theme.colors.surface       // light: #F9F5EC parchment | dark: #1C1912 ember
+theme.colors.surfaceAlt    // light: #EDE8D8          | dark: #231F17 ash
+theme.colors.surfaceRaised // light: #FFFFFF           | dark: #2D2820 coal
 
-// Semantic
-theme.colors.success / .successSubtle
-theme.colors.warning / .warningSubtle
-theme.colors.error   / .errorSubtle
+// Text
+theme.colors.text           // light: #2C2416 ink   | dark: #F0EAD8 warm white
+theme.colors.textSecondary  // light: #5C4F38 umber | dark: #C4B89A linen
+theme.colors.textTertiary   // light: #8B7A5E dust  | dark: #7A6E58 tallow
+theme.colors.textInverse    // light: #F0EAD8       | dark: #2C2416
+
+// Forge Gold (primary accent — unchanged across modes)
+theme.colors.accent        // #C8A84B
+theme.colors.accentLight   // #E8D07A
+theme.colors.accentDark    // #9B7A28
+theme.colors.accentSubtle  // rgba(200,168,75, 0.12-0.14)
+
+// Forest Green (success / completion — unchanged across modes)
+theme.colors.success       // #4A6741
+theme.colors.successLight  // #6B8F61
+theme.colors.successSubtle // rgba(74,103,65, 0.12-0.20)
+
+// Rust (warning / challenge)
+theme.colors.warning       // #8B5A2B
+theme.colors.warningLight  // #C4874A
+theme.colors.warningSubtle
+
+// Supplemental
+theme.colors.sky / .skySubtle
+theme.colors.bloom / .bloomSubtle
+theme.colors.error / .errorSubtle
+
+// UI chrome
+theme.colors.border / .borderSubtle
+theme.colors.tabBar / .tabBarBorder
+theme.colors.overlay / .overlayLight
+theme.colors.streakFire    // #C8A84B (same as accent)
+
+// ── Shared palette constants (use in gradient stops, svg fills) ──────────────
+theme.palette.gold / .goldLight / .goldDark
+theme.palette.forest / .forestLight / .forestMuted
+theme.palette.rust / .rustLight
+theme.palette.sky / .bloom
 ```
 
 ---

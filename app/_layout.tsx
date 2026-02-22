@@ -1,35 +1,77 @@
+import { useEffect } from 'react'
 import { Stack } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
-import { useColorScheme, View, ActivityIndicator, Text } from 'react-native'
+import { View, ActivityIndicator, Text } from 'react-native'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
+import * as SplashScreen from 'expo-splash-screen'
 import { useMigrations } from 'drizzle-orm/expo-sqlite/migrator'
 import { db } from '@/db/client'
 import migrations from '@/db/migrations/migrations'
 
-export default function RootLayout() {
-  const colorScheme = useColorScheme()
-  const isDark = colorScheme === 'dark'
-  const { success, error } = useMigrations(db, migrations)
+import {
+  CormorantUpright_400Regular,
+  CormorantUpright_600SemiBold,
+  CormorantUpright_700Bold,
+} from '@expo-google-fonts/cormorant-upright'
+import {
+  Cormorant_400Regular_Italic,
+  Cormorant_600SemiBold_Italic,
+} from '@expo-google-fonts/cormorant'
+import {
+  CrimsonPro_400Regular,
+  CrimsonPro_500Medium,
+  CrimsonPro_600SemiBold,
+  CrimsonPro_700Bold,
+} from '@expo-google-fonts/crimson-pro'
+import { useFonts } from 'expo-font'
 
-  if (error) {
+// Hold the splash until fonts + DB migration are both ready.
+SplashScreen.preventAutoHideAsync()
+
+export default function RootLayout() {
+  const { success: dbReady, error: dbError } = useMigrations(db, migrations)
+
+  const [fontsLoaded, fontError] = useFonts({
+    CormorantUpright_400Regular,
+    CormorantUpright_600SemiBold,
+    CormorantUpright_700Bold,
+    Cormorant_400Regular_Italic,
+    Cormorant_600SemiBold_Italic,
+    CrimsonPro_400Regular,
+    CrimsonPro_500Medium,
+    CrimsonPro_600SemiBold,
+    CrimsonPro_700Bold,
+  })
+
+  const ready = dbReady && fontsLoaded
+
+  useEffect(() => {
+    if (ready || dbError || fontError) {
+      SplashScreen.hideAsync()
+    }
+  }, [ready, dbError, fontError])
+
+  if (dbError) {
     return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#0a0a0a' }}>
-        <Text style={{ color: '#ff4444' }}>Database error: {error.message}</Text>
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#12100C' }}>
+        <Text style={{ color: '#C05050', fontFamily: 'System' }}>
+          Database error: {dbError.message}
+        </Text>
       </View>
     )
   }
 
-  if (!success) {
+  if (!ready) {
     return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#0a0a0a' }}>
-        <ActivityIndicator color="#FF6B35" />
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#12100C' }}>
+        <ActivityIndicator color="#C8A84B" />
       </View>
     )
   }
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <StatusBar style={isDark ? 'light' : 'dark'} />
+      <StatusBar style="auto" />
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="onboarding" />
