@@ -1,12 +1,12 @@
-import { View, Text, Pressable } from 'react-native'
+import { View, Text } from 'react-native'
 import { StyleSheet, useUnistyles } from 'react-native-unistyles'
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs'
-import { TodayIcon, ProgressIcon, ForgeIcon, SettingsIcon } from '@/components/icons/TabIcons'
+import { Pressable } from '@/components/Pressable'
+import { TodayIcon, ProgressIcon, SettingsIcon } from '@/components/icons/TabIcons'
 
 const TABS = [
   { name: 'index',    label: 'Today',    Icon: TodayIcon    },
   { name: 'progress', label: 'Progress', Icon: ProgressIcon },
-  { name: 'forge',    label: 'Forge',    Icon: ForgeIcon    },
   { name: 'settings', label: 'Settings', Icon: SettingsIcon },
 ] as const
 

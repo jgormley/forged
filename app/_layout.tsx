@@ -8,6 +8,7 @@ import { useMigrations } from 'drizzle-orm/expo-sqlite/migrator'
 import { db } from '@/db/client'
 import migrations from '@/db/migrations/migrations'
 
+import { MilestoneModal } from '@/components/MilestoneModal'
 import {
   CormorantUpright_400Regular,
   CormorantUpright_600SemiBold,
@@ -79,7 +80,9 @@ export default function RootLayout() {
         <Stack.Screen name="habit/new" options={{ presentation: 'modal' }} />
         <Stack.Screen name="habit/[id]" />
         <Stack.Screen name="habit/edit/[id]" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="legal/[slug]" options={{ presentation: 'modal' }} />
       </Stack>
+      <MilestoneModal />
     </GestureHandlerRootView>
   )
 }

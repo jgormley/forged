@@ -15,7 +15,13 @@ function todayStart(): Date {
   return d
 }
 
-function toDateKey(date: Date): string {
+function daysAgo(n: number): Date {
+  const d = todayStart()
+  d.setDate(d.getDate() - n)
+  return d
+}
+
+export function toDateKey(date: Date): string {
   const y = date.getFullYear()
   const m = String(date.getMonth() + 1).padStart(2, '0')
   const d = String(date.getDate()).padStart(2, '0')
@@ -27,15 +33,24 @@ function toDateKey(date: Date): string {
 // ---------------------------------------------------------------------------
 
 interface CompletionsState {
-  // All completions loaded for the current habit/stats context
+  /**
+   * All completions loaded for the current context.
+   * Populated by loadAll() for the Today view, or loadForHabit() for the
+   * detail screen.
+   */
   completions: Completion[]
-  // Set of habit IDs completed today — drives the Today view UI
+  /** Quick lookup set — which habit IDs are completed today. */
   completedTodayIds: Set<string>
   isLoading: boolean
 
+  /**
+   * Load all completions within a rolling window (default 90 days).
+   * Call this on Today view mount; covers streak + 7-day dot calculation.
+   */
+  loadAll: (windowDays?: number) => Promise<void>
   /** Load all completions for a specific habit (for stats / detail screen) */
   loadForHabit: (habitId: string) => Promise<void>
-  /** Load today's completions for all habits (called on Today view mount) */
+  /** Load today's completions for all habits */
   loadToday: () => Promise<void>
   /**
    * Toggle a habit's completion for today.
@@ -48,6 +63,24 @@ export const useCompletionsStore = create<CompletionsState>((set, get) => ({
   completions: [],
   completedTodayIds: new Set(),
   isLoading: false,
+
+  loadAll: async (windowDays = 90) => {
+    set({ isLoading: true })
+    try {
+      const since = daysAgo(windowDays)
+      const rows = await db
+        .select()
+        .from(completions)
+        .where(gte(completions.completedAt, since))
+        .orderBy(completions.completedAt)
+      const ids = new Set(
+        rows.filter((r) => toDateKey(r.completedAt) === toDateKey(new Date())).map((r) => r.habitId)
+      )
+      set({ completions: rows, completedTodayIds: ids, isLoading: false })
+    } catch {
+      set({ isLoading: false })
+    }
+  },
 
   loadToday: async () => {
     set({ isLoading: true })
@@ -93,7 +126,13 @@ export const useCompletionsStore = create<CompletionsState>((set, get) => ({
       set((s) => {
         const next = new Set(s.completedTodayIds)
         next.delete(habitId)
-        return { completedTodayIds: next }
+        const todayKey = toDateKey(new Date())
+        return {
+          completedTodayIds: next,
+          completions: s.completions.filter(
+            (c) => !(c.habitId === habitId && toDateKey(c.completedAt) === todayKey)
+          ),
+        }
       })
       return null
     } else {

@@ -4,7 +4,7 @@
     "slug": "forged",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/forged-logo.png",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "scheme": "forged",
@@ -20,8 +20,8 @@
     "android": {
       "package": "com.forgedapp.forged",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#0a0a0a"
+        "foregroundImage": "./assets/forged-logo.png",
+        "backgroundColor": "#4A6741"
       },
       "edgeToEdgeEnabled": true
     },
@@ -31,7 +31,7 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/icon.png",
+          "icon": "./assets/forged-logo.png",
           "color": "#0a0a0a"
         }
       ],

@@ -9,7 +9,6 @@ export default function TabLayout() {
     >
       <Tabs.Screen name="index" />
       <Tabs.Screen name="progress" />
-      <Tabs.Screen name="forge" />
       <Tabs.Screen name="settings" />
     </Tabs>
   )

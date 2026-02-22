@@ -1,5 +1,8 @@
-import { View, Text, ScrollView, Pressable } from 'react-native'
+import { View, Text, ScrollView, Alert } from 'react-native'
+import { router } from 'expo-router'
 import { StyleSheet } from 'react-native-unistyles'
+import { ScreenHeader } from '@/components/ScreenHeader'
+import { Pressable } from '@/components/Pressable'
 
 function SettingsRow({
   label, value, chevron = true, destructive = false, onPress,
@@ -7,10 +10,7 @@ function SettingsRow({
   label: string; value?: string; chevron?: boolean; destructive?: boolean; onPress?: () => void
 }) {
   return (
-    <Pressable
-      style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
-      onPress={onPress}
-    >
+    <Pressable style={styles.row} onPress={onPress}>
       <Text style={[styles.rowLabel, destructive && styles.rowLabelDestructive]}>{label}</Text>
       <View style={styles.rowRight}>
         {value ? <Text style={styles.rowValue}>{value}</Text> : null}
@@ -32,9 +32,9 @@ function SettingsSection({ title, children }: { title: string; children: React.R
 export default function SettingsScreen() {
   return (
     <View style={styles.root}>
-      <View style={styles.header}>
+      <ScreenHeader style={styles.header}>
         <Text style={styles.headerTitle}>Settings</Text>
-      </View>
+      </ScreenHeader>
 
       <ScrollView style={styles.body} contentContainerStyle={styles.bodyContent} showsVerticalScrollIndicator={false}>
         <View style={styles.premiumCard}>
@@ -48,7 +48,14 @@ export default function SettingsScreen() {
         </View>
 
         <SettingsSection title="Habits">
-          <SettingsRow label="Manage habits" />
+          <SettingsRow
+            label="Manage habits"
+            onPress={() => Alert.alert(
+              'Managing Habits',
+              'To edit or delete a habit, long-press it on the Today page.',
+              [{ text: 'Got it' }],
+            )}
+          />
           <SettingsRow label="Default reminder time" value="None" />
         </SettingsSection>
 
@@ -64,8 +71,8 @@ export default function SettingsScreen() {
 
         <SettingsSection title="About">
           <SettingsRow label="Rate Forged" />
-          <SettingsRow label="Privacy Policy" />
-          <SettingsRow label="Terms of Service" />
+          <SettingsRow label="Privacy Policy" onPress={() => router.push('/legal/privacy')} />
+          <SettingsRow label="Terms of Service" onPress={() => router.push('/legal/terms')} />
           <SettingsRow label="Version" value="1.0.0" chevron={false} />
         </SettingsSection>
 
@@ -78,31 +85,31 @@ export default function SettingsScreen() {
   )
 }
 
-const styles = StyleSheet.create((theme, rt) => ({
+const styles = StyleSheet.create((theme) => ({
   root: {
     flex: 1,
-    backgroundColor: theme.colors.background,
+    backgroundColor: theme.colors.surface,
   },
 
   header: {
-    backgroundColor: theme.colors.background,
-    paddingTop: rt.insets.top + theme.spacing.sm,
-    paddingHorizontal: theme.spacing.md,
-    paddingBottom: theme.spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.borderSubtle,
+    backgroundColor: theme.colors.sky,
+    paddingBottom: theme.spacing.xxxl,
   },
   headerTitle: {
     fontFamily: theme.font.family.display,
-    fontSize: theme.font.size.xxl,
-    color: theme.colors.text,
+    fontSize: theme.font.size.display,
+    color: theme.colors.textInverse,
+    lineHeight: theme.font.size.display * theme.font.lineHeight.tight,
   },
 
   body: {
     flex: 1,
+    backgroundColor: theme.colors.surface,
+    marginTop: -2,
   },
   bodyContent: {
     padding: theme.spacing.md,
+    paddingTop: theme.spacing.lg,
     paddingBottom: theme.spacing.xxxl,
   },
 
@@ -169,9 +176,6 @@ const styles = StyleSheet.create((theme, rt) => ({
     paddingVertical: 14,
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.borderSubtle,
-  },
-  rowPressed: {
-    backgroundColor: theme.colors.overlayLight,
   },
   rowLabel: {
     fontFamily: theme.font.family.body,
