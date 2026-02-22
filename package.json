@@ -17,9 +17,18 @@
       {
         "displayName": "unit",
         "testEnvironment": "node",
-        "testMatch": ["<rootDir>/src/utils/**/*.test.ts"],
+        "testMatch": [
+          "<rootDir>/src/utils/**/*.test.ts"
+        ],
         "transform": {
-          "^.+\\.tsx?$": ["ts-jest", { "tsconfig": { "strict": true } }]
+          "^.+\\.tsx?$": [
+            "ts-jest",
+            {
+              "tsconfig": {
+                "strict": true
+              }
+            }
+          ]
         }
       }
     ]
@@ -32,6 +41,7 @@
     "expo": "^55.0.0-preview.12",
     "expo-asset": "~55.0.6",
     "expo-constants": "~55.0.6",
+    "expo-crypto": "~55.0.7",
     "expo-dev-client": "~55.0.7",
     "expo-font": "~55.0.4",
     "expo-haptics": "~55.0.7",
