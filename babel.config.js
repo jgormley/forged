@@ -5,6 +5,8 @@ module.exports = function (api) {
     plugins: [
       // Reanimated 4: use worklets plugin (NOT reanimated/plugin from v3)
       'react-native-worklets/plugin',
+      // Unistyles v3: build-time dependency tracking (must come after worklets)
+      ['react-native-unistyles/plugin', { root: 'src' }],
     ],
   }
 }
