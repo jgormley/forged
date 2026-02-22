@@ -1,6 +1,6 @@
 import {
   View, Text, TextInput, ScrollView,
-  KeyboardAvoidingView, Platform, Modal,
+  KeyboardAvoidingView, Platform, Modal, Switch,
 } from 'react-native'
 import { Pressable } from '@/components/Pressable'
 import { useState, useCallback } from 'react'
@@ -9,6 +9,8 @@ import { StyleSheet } from 'react-native-unistyles'
 import { useHabitsStore } from '@/stores/habitsStore'
 import { HabitCard } from '@/components/HabitCard'
 import type { FrequencyConfig } from '@/utils/streak'
+import { requestNotificationPermissions } from '@/utils/notifications'
+import DateTimePicker from '@react-native-community/datetimepicker'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants
@@ -49,17 +51,36 @@ type FreqType = 'daily' | 'daysOfWeek' | 'xPerWeek'
 // Screen
 // ─────────────────────────────────────────────────────────────────────────────
 
+function makeDefaultReminderDate(): Date {
+  const d = new Date()
+  d.setHours(8, 0, 0, 0)
+  return d
+}
+
+function formatTime(d: Date): string {
+  const h = d.getHours()
+  const m = d.getMinutes().toString().padStart(2, '0')
+  const ampm = h >= 12 ? 'PM' : 'AM'
+  return `${h % 12 || 12}:${m} ${ampm}`
+}
+
+function toHHMM(d: Date): string {
+  return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`
+}
+
 export default function NewHabitScreen() {
   const add = useHabitsStore((s) => s.add)
-
-  const [name,         setName]         = useState('')
-  const [icon,         setIcon]         = useState(EMOJI_QUICKPICKS[0])
-  const [color,        setColor]        = useState(HABIT_COLORS[0])
-  const [freqType,     setFreqType]     = useState<FreqType>('daily')
-  const [selectedDays, setSelectedDays] = useState<number[]>([1, 2, 3, 4, 5])
-  const [xPerWeek,     setXPerWeek]     = useState(3)
-  const [saving,       setSaving]       = useState(false)
-  const [pickerOpen,   setPickerOpen]   = useState(false)
+  const [name,            setName]            = useState('')
+  const [icon,            setIcon]            = useState(EMOJI_QUICKPICKS[0])
+  const [color,           setColor]           = useState(HABIT_COLORS[0])
+  const [freqType,        setFreqType]        = useState<FreqType>('daily')
+  const [selectedDays,    setSelectedDays]    = useState<number[]>([1, 2, 3, 4, 5])
+  const [xPerWeek,        setXPerWeek]        = useState(3)
+  const [saving,          setSaving]          = useState(false)
+  const [pickerOpen,      setPickerOpen]      = useState(false)
+  const [reminderEnabled, setReminderEnabled] = useState(false)
+  const [reminderTime,    setReminderTime]    = useState(makeDefaultReminderDate)
+  const [showTimePicker,  setShowTimePicker]  = useState(false)
 
   const canSave =
     name.trim().length > 0 &&
@@ -86,12 +107,19 @@ export default function NewHabitScreen() {
           : freqType === 'daysOfWeek'
             ? { type: 'daysOfWeek', days: selectedDays }
             : { type: 'xPerWeek', count: xPerWeek }
-      await add({ name: name.trim(), icon, color, category: 'custom', frequency })
+      await add({
+        name: name.trim(),
+        icon,
+        color,
+        category: 'custom',
+        frequency,
+        reminderTime: reminderEnabled ? toHHMM(reminderTime) : null,
+      })
       router.back()
     } finally {
       setSaving(false)
     }
-  }, [canSave, saving, freqType, selectedDays, xPerWeek, name, icon, color, add])
+  }, [canSave, saving, freqType, selectedDays, xPerWeek, name, icon, color, add, reminderEnabled, reminderTime])
 
   // isCompleted=true so the color fill is visible in the preview
   const preview = {
@@ -212,6 +240,54 @@ export default function NewHabitScreen() {
                 <Text style={styles.stepBtnText}>+</Text>
               </Pressable>
             </View>
+          )}
+
+          {/* ── Reminder ── */}
+          <Text style={styles.sectionLabel}>Reminder</Text>
+          <View style={styles.reminderRow}>
+            <Text style={styles.reminderLabel}>Remind me</Text>
+            <Switch
+              value={reminderEnabled}
+              onValueChange={async (val) => {
+                if (val) await requestNotificationPermissions()
+                setReminderEnabled(val)
+                if (val && Platform.OS === 'android') setShowTimePicker(true)
+              }}
+              trackColor={{ true: color }}
+              thumbColor="#FFFFFF"
+            />
+          </View>
+
+          {reminderEnabled && (
+            <>
+              {Platform.OS === 'ios' ? (
+                <DateTimePicker
+                  value={reminderTime}
+                  mode="time"
+                  display="spinner"
+                  onChange={(_, date) => { if (date) setReminderTime(date) }}
+                />
+              ) : (
+                <Pressable
+                  style={styles.reminderTimeBtn}
+                  onPress={() => setShowTimePicker(true)}
+                >
+                  <Text style={styles.reminderTimeText}>{formatTime(reminderTime)}</Text>
+                </Pressable>
+              )}
+            </>
+          )}
+
+          {showTimePicker && Platform.OS === 'android' && (
+            <DateTimePicker
+              value={reminderTime}
+              mode="time"
+              display="default"
+              onChange={(_, date) => {
+                setShowTimePicker(false)
+                if (date) setReminderTime(date)
+              }}
+            />
           )}
 
           {/* ── Icon ── */}
@@ -536,6 +612,39 @@ const styles = StyleSheet.create((theme, rt) => ({
     fontSize: theme.font.size.xl,
     minWidth: 130,
     textAlign: 'center',
+  },
+
+  // ── Reminder
+  reminderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: theme.colors.surfaceRaised,
+    borderRadius: theme.radius.sm,
+    borderWidth: 1,
+    borderColor: theme.colors.borderSubtle,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: 14,
+  },
+  reminderLabel: {
+    fontFamily: theme.font.family.body,
+    fontSize: theme.font.size.md,
+    color: theme.colors.text,
+  },
+  reminderTimeBtn: {
+    backgroundColor: theme.colors.surfaceRaised,
+    borderRadius: theme.radius.sm,
+    borderWidth: 1,
+    borderColor: theme.colors.borderSubtle,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    alignItems: 'center',
+    marginTop: theme.spacing.xs,
+  },
+  reminderTimeText: {
+    fontFamily: theme.font.family.display,
+    fontSize: theme.font.size.xl,
+    color: theme.colors.accent,
   },
 
   // ── Bottom CTA

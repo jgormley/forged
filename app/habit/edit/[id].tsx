@@ -1,6 +1,6 @@
 import {
   View, Text, TextInput, ScrollView,
-  KeyboardAvoidingView, Platform, Modal, Alert,
+  KeyboardAvoidingView, Platform, Modal, Alert, Switch,
 } from 'react-native'
 import { Pressable } from '@/components/Pressable'
 import { useState, useCallback } from 'react'
@@ -9,6 +9,8 @@ import { StyleSheet } from 'react-native-unistyles'
 import { useHabitsStore } from '@/stores/habitsStore'
 import { HabitCard } from '@/components/HabitCard'
 import type { FrequencyConfig } from '@/utils/streak'
+import { requestNotificationPermissions } from '@/utils/notifications'
+import DateTimePicker from '@react-native-community/datetimepicker'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants (must match new.tsx)
@@ -43,6 +45,17 @@ type FreqType = 'daily' | 'daysOfWeek' | 'xPerWeek'
 // Screen
 // ─────────────────────────────────────────────────────────────────────────────
 
+function formatTime(d: Date): string {
+  const h = d.getHours()
+  const m = d.getMinutes().toString().padStart(2, '0')
+  const ampm = h >= 12 ? 'PM' : 'AM'
+  return `${h % 12 || 12}:${m} ${ampm}`
+}
+
+function toHHMM(d: Date): string {
+  return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`
+}
+
 export default function EditHabitScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const habit  = useHabitsStore((s) => s.habits.find((h) => h.id === id))
@@ -55,18 +68,27 @@ export default function EditHabitScreen() {
     return 'daily'
   }
 
-  const [name,         setName]         = useState(habit?.name  ?? '')
-  const [icon,         setIcon]         = useState(habit?.icon  ?? EMOJI_QUICKPICKS[0])
-  const [color,        setColor]        = useState(habit?.color ?? HABIT_COLORS[0])
-  const [freqType,     setFreqType]     = useState<FreqType>(initFreqType)
-  const [selectedDays, setSelectedDays] = useState<number[]>(
+  const [name,            setName]            = useState(habit?.name  ?? '')
+  const [icon,            setIcon]            = useState(habit?.icon  ?? EMOJI_QUICKPICKS[0])
+  const [color,           setColor]           = useState(habit?.color ?? HABIT_COLORS[0])
+  const [freqType,        setFreqType]        = useState<FreqType>(initFreqType)
+  const [selectedDays,    setSelectedDays]    = useState<number[]>(
     habit?.frequency.type === 'daysOfWeek' ? habit.frequency.days : [1, 2, 3, 4, 5],
   )
   const [xPerWeek, setXPerWeek] = useState(
     habit?.frequency.type === 'xPerWeek' ? habit.frequency.count : 3,
   )
-  const [saving,     setSaving]     = useState(false)
-  const [pickerOpen, setPickerOpen] = useState(false)
+  const [saving,          setSaving]          = useState(false)
+  const [pickerOpen,      setPickerOpen]      = useState(false)
+  const [reminderEnabled, setReminderEnabled] = useState(!!habit?.reminderTime)
+  const [reminderTime,    setReminderTime]    = useState(() => {
+    if (!habit?.reminderTime) {
+      const d = new Date(); d.setHours(8, 0, 0, 0); return d
+    }
+    const [h, m] = habit.reminderTime.split(':').map(Number)
+    const d = new Date(); d.setHours(h, m, 0, 0); return d
+  })
+  const [showTimePicker, setShowTimePicker] = useState(false)
 
   const canSave =
     name.trim().length > 0 &&
@@ -92,12 +114,18 @@ export default function EditHabitScreen() {
           : freqType === 'daysOfWeek'
             ? { type: 'daysOfWeek', days: selectedDays }
             : { type: 'xPerWeek', count: xPerWeek }
-      await update(id, { name: name.trim(), icon, color, frequency })
+      await update(id, {
+        name: name.trim(),
+        icon,
+        color,
+        frequency,
+        reminderTime: reminderEnabled ? toHHMM(reminderTime) : null,
+      })
       router.back()
     } finally {
       setSaving(false)
     }
-  }, [canSave, saving, freqType, selectedDays, xPerWeek, name, icon, color, id, update])
+  }, [canSave, saving, freqType, selectedDays, xPerWeek, name, icon, color, id, update, reminderEnabled, reminderTime])
 
   const handleDelete = useCallback(() => {
     Alert.alert(
@@ -237,6 +265,54 @@ export default function EditHabitScreen() {
                 <Text style={styles.stepBtnText}>+</Text>
               </Pressable>
             </View>
+          )}
+
+          {/* ── Reminder ── */}
+          <Text style={styles.sectionLabel}>Reminder</Text>
+          <View style={styles.reminderRow}>
+            <Text style={styles.reminderLabel}>Remind me</Text>
+            <Switch
+              value={reminderEnabled}
+              onValueChange={async (val) => {
+                if (val) await requestNotificationPermissions()
+                setReminderEnabled(val)
+                if (val && Platform.OS === 'android') setShowTimePicker(true)
+              }}
+              trackColor={{ true: color }}
+              thumbColor="#FFFFFF"
+            />
+          </View>
+
+          {reminderEnabled && (
+            <>
+              {Platform.OS === 'ios' ? (
+                <DateTimePicker
+                  value={reminderTime}
+                  mode="time"
+                  display="spinner"
+                  onChange={(_, date) => { if (date) setReminderTime(date) }}
+                />
+              ) : (
+                <Pressable
+                  style={styles.reminderTimeBtn}
+                  onPress={() => setShowTimePicker(true)}
+                >
+                  <Text style={styles.reminderTimeText}>{formatTime(reminderTime)}</Text>
+                </Pressable>
+              )}
+            </>
+          )}
+
+          {showTimePicker && Platform.OS === 'android' && (
+            <DateTimePicker
+              value={reminderTime}
+              mode="time"
+              display="default"
+              onChange={(_, date) => {
+                setShowTimePicker(false)
+                if (date) setReminderTime(date)
+              }}
+            />
           )}
 
           {/* ── Icon ── */}
@@ -543,6 +619,38 @@ const styles = StyleSheet.create((theme, rt) => ({
     fontSize: theme.font.size.xl,
     minWidth: 130,
     textAlign: 'center',
+  },
+
+  reminderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: theme.colors.surfaceRaised,
+    borderRadius: theme.radius.sm,
+    borderWidth: 1,
+    borderColor: theme.colors.borderSubtle,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: 14,
+  },
+  reminderLabel: {
+    fontFamily: theme.font.family.body,
+    fontSize: theme.font.size.md,
+    color: theme.colors.text,
+  },
+  reminderTimeBtn: {
+    backgroundColor: theme.colors.surfaceRaised,
+    borderRadius: theme.radius.sm,
+    borderWidth: 1,
+    borderColor: theme.colors.borderSubtle,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    alignItems: 'center',
+    marginTop: theme.spacing.xs,
+  },
+  reminderTimeText: {
+    fontFamily: theme.font.family.display,
+    fontSize: theme.font.size.xl,
+    color: theme.colors.accent,
   },
 
   cta: {

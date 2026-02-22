@@ -37,6 +37,8 @@
     "@expo-google-fonts/cormorant": "^0.4.2",
     "@expo-google-fonts/cormorant-upright": "^0.4.1",
     "@expo-google-fonts/crimson-pro": "^0.4.2",
+    "@react-native-community/datetimepicker": "^8.6.0",
+    "@sentry/react-native": "^8.1.0",
     "@shopify/react-native-skia": "^2.4.21",
     "babel-preset-expo": "~55.0.5",
     "drizzle-orm": "^0.45.1",

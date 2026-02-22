@@ -1,8 +1,10 @@
-import { View, Text, ScrollView, Alert } from 'react-native'
+import { View, Text, ScrollView, Alert, Platform } from 'react-native'
 import { router } from 'expo-router'
 import { StyleSheet } from 'react-native-unistyles'
 import { ScreenHeader } from '@/components/ScreenHeader'
 import { Pressable } from '@/components/Pressable'
+import { useState } from 'react'
+import DateTimePicker from '@react-native-community/datetimepicker'
 
 function SettingsRow({
   label, value, chevron = true, destructive = false, onPress,
@@ -29,7 +31,20 @@ function SettingsSection({ title, children }: { title: string; children: React.R
   )
 }
 
+function formatSettingsTime(d: Date): string {
+  const h = d.getHours()
+  const m = d.getMinutes().toString().padStart(2, '0')
+  const ampm = h >= 12 ? 'PM' : 'AM'
+  return `${h % 12 || 12}:${m} ${ampm}`
+}
+
 export default function SettingsScreen() {
+  // TODO: persist to AsyncStorage when Settings screen is rebuilt in Phase 3
+  const [defaultReminderTime, setDefaultReminderTime] = useState<Date | null>(null)
+  const [showTimePicker, setShowTimePicker] = useState(false)
+
+  const reminderValue = defaultReminderTime ? formatSettingsTime(defaultReminderTime) : 'None'
+
   return (
     <View style={styles.root}>
       <ScreenHeader style={styles.header}>
@@ -56,7 +71,11 @@ export default function SettingsScreen() {
               [{ text: 'Got it' }],
             )}
           />
-          <SettingsRow label="Default reminder time" value="None" />
+          <SettingsRow
+            label="Default reminder time"
+            value={reminderValue}
+            onPress={() => setShowTimePicker(true)}
+          />
         </SettingsSection>
 
         <SettingsSection title="Notifications">
@@ -81,6 +100,30 @@ export default function SettingsScreen() {
           <SettingsRow label="Delete all data" destructive chevron={false} />
         </SettingsSection>
       </ScrollView>
+
+      {showTimePicker && Platform.OS === 'ios' && (
+        <DateTimePicker
+          value={defaultReminderTime ?? (() => { const d = new Date(); d.setHours(8, 0, 0, 0); return d })()}
+          mode="time"
+          display="spinner"
+          onChange={(_, date) => {
+            setShowTimePicker(false)
+            if (date) setDefaultReminderTime(date)
+          }}
+        />
+      )}
+
+      {showTimePicker && Platform.OS === 'android' && (
+        <DateTimePicker
+          value={defaultReminderTime ?? (() => { const d = new Date(); d.setHours(8, 0, 0, 0); return d })()}
+          mode="time"
+          display="default"
+          onChange={(_, date) => {
+            setShowTimePicker(false)
+            if (date) setDefaultReminderTime(date)
+          }}
+        />
+      )}
     </View>
   )
 }

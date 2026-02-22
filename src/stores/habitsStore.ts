@@ -4,6 +4,11 @@ import { db } from '@/db/client'
 import { habits } from '@/db/schema'
 import type { Habit, NewHabit, FrequencyConfig } from '@/db/schema'
 import { randomUUID } from 'expo-crypto'
+import {
+  scheduleHabitReminders,
+  cancelHabitReminders,
+  rescheduleHabitReminders,
+} from '@/utils/notifications'
 
 // ---------------------------------------------------------------------------
 // Helpers — FrequencyConfig <-> JSON column
@@ -96,6 +101,7 @@ export const useHabitsStore = create<HabitsState>((set, get) => ({
     await db.insert(habits).values(newRow)
     const habit = toHabitWithFrequency(newRow as Habit)
     set((s) => ({ habits: [...s.habits, habit] }))
+    scheduleHabitReminders(habit)
     return habit
   },
 
@@ -111,11 +117,16 @@ export const useHabitsStore = create<HabitsState>((set, get) => ({
         h.id === id ? { ...h, ...changes } : h,
       ),
     }))
+    if (changes.reminderTime !== undefined || changes.frequency !== undefined) {
+      const updated = get().habits.find((h) => h.id === id)
+      if (updated) rescheduleHabitReminders(updated)
+    }
   },
 
   remove: async (id) => {
     await db.delete(habits).where(eq(habits.id, id))
     set((s) => ({ habits: s.habits.filter((h) => h.id !== id) }))
+    cancelHabitReminders(id)
   },
 
   archive: async (id) => {
