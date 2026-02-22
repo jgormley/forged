@@ -218,6 +218,8 @@ type HabitCategory =
 | Icons | `@expo/vector-icons` | SDK 54 | Plus emoji for habit icons |
 | Dev Build | `expo-dev-client` | SDK 54 | Required — no Expo Go for this stack |
 | Build/Deploy | EAS Build + EAS Submit | — | Handles both stores |
+| Crash reporting | `@sentry/react-native` | Latest | Sentry + Expo plugin (`@sentry/react-native/expo`) |
+| Analytics | `posthog-react-native` | Latest | PostHog — product analytics, funnels, free up to 1M events/mo |
 
 ### Reanimated 4 — Critical Migration Notes
 
@@ -488,6 +490,7 @@ App
 - Add/Edit habit screen
 
 ### Phase 2 — Priority Features (Days 6–12)
+- **Sentry crash reporting**: install `@sentry/react-native`, add Expo plugin, configure DSN via env var
 - `expo-notifications`: per-habit scheduling, reschedule on edit, cancel on delete
 - Stats dashboard: overview cards, per-habit sparklines, heatmap component
 - Habit detail screen
@@ -502,6 +505,7 @@ App
 - Freemium gates implementation
 - Paywall screen
 - Habit template presets (10–15)
+- **PostHog analytics**: install `posthog-react-native`, wire key events (see Section 14)
 
 ### Phase 4 — Polish + Submission (Days 20–30)
 - App icon design (shows in widget, home screen, store — invest here)
@@ -560,7 +564,89 @@ Build powerful habits through streaks. Track daily goals, never break the chain,
 
 ---
 
-## 13. Future v2 Ideas (Do Not Build in v1)
+## 13. Observability — Crash Reporting & Analytics
+
+### Crash Reporting — Sentry
+
+**Package:** `@sentry/react-native` + Expo config plugin `@sentry/react-native/expo`
+
+**Why Sentry:** Best-in-class React Native support; source maps upload automatically via EAS; breadcrumbs give full context leading up to a crash; free tier covers 5,000 errors/month easily.
+
+**Setup:**
+```ts
+// app/_layout.tsx
+import * as Sentry from '@sentry/react-native'
+
+Sentry.init({
+  dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
+  environment: __DEV__ ? 'development' : 'production',
+  tracesSampleRate: 0.2,   // 20% performance traces in prod
+  enableAutoSessionTracking: true,
+})
+```
+
+**app.json plugin config:**
+```json
+["@sentry/react-native/expo", { "organization": "...", "project": "forged" }]
+```
+
+**Env vars:**
+- `EXPO_PUBLIC_SENTRY_DSN` — public, safe to commit to EAS env
+
+---
+
+### Analytics — PostHog
+
+**Package:** `posthog-react-native`
+
+**Why PostHog:** Open source; generous free tier (1M events/month); product analytics focus (funnels, retention, feature flags); no sampling on free tier; self-hostable if needed later.
+
+**Key events to track:**
+
+| Event | Properties | Phase |
+|---|---|---|
+| `habit_created` | `{ category, frequency_type, has_reminder }` | Core loop |
+| `habit_completed` | `{ habit_id, streak_length, completion_count }` | Core loop |
+| `streak_milestone` | `{ days: 7 \| 30 \| 100, habit_id }` | Core loop |
+| `paywall_viewed` | `{ trigger: '4th_habit' \| 'stats' \| 'widget' \| 'export' }` | Monetization |
+| `purchase_completed` | `{ product_id, price }` | Monetization |
+| `purchase_cancelled` | `{ trigger }` | Monetization |
+| `habit_deleted` | `{ streak_length, days_tracked }` | Retention signal |
+| `notification_enabled` | `{ context: 'onboarding' \| 'settings' }` | Engagement |
+| `widget_configured` | `{ size: 'small' \| 'medium' }` | Engagement |
+| `app_opened` | (auto) | Retention |
+
+**What to answer with this data:**
+- What % of users who see the paywall convert? (optimize the CTA)
+- Which habit categories are most popular? (inform templates)
+- At what streak length do users churn? (inform milestone modal timing)
+- Do notification users retain better? (gate or push harder during onboarding)
+
+**Setup:**
+```ts
+// src/analytics/posthog.ts
+import PostHog from 'posthog-react-native'
+
+export const posthog = new PostHog(process.env.EXPO_PUBLIC_POSTHOG_API_KEY!, {
+  host: 'https://us.i.posthog.com',
+  disabled: __DEV__,    // silence events during development
+})
+```
+
+**Env vars:**
+- `EXPO_PUBLIC_POSTHOG_API_KEY` — public (client-side key, write-only)
+
+---
+
+### Privacy considerations
+- No PII is collected — all events use anonymous device IDs
+- Sentry: enable `beforeSend` to scrub any accidental PII from error payloads
+- PostHog: disable session recording (not needed; habit names could be sensitive)
+- Add to privacy policy: "We use Sentry for crash diagnostics and PostHog for aggregated, anonymous usage analytics"
+
+---
+
+## 14. Future v2 Ideas (Do Not Build in v1)
 
 - Sports/athletic angle: preset "athlete packs" (Strength, Running, Recovery, Nutrition)
 - Coach mode: create habit plans for a team/group
