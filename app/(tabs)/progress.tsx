@@ -1,5 +1,6 @@
 import { View, Text, ScrollView } from 'react-native'
 import { StyleSheet } from 'react-native-unistyles'
+import { ScreenHeader } from '@/components/ScreenHeader'
 
 function StatBox({ value, label }: { value: string; label: string }) {
   return (
@@ -13,10 +14,10 @@ function StatBox({ value, label }: { value: string; label: string }) {
 export default function ProgressScreen() {
   return (
     <View style={styles.root}>
-      <View style={styles.header}>
+      <ScreenHeader style={styles.header}>
         <Text style={styles.headerEyebrow}>Your growth</Text>
         <Text style={styles.headerTitle}>Progress</Text>
-      </View>
+      </ScreenHeader>
 
       <ScrollView
         style={styles.body}
@@ -49,18 +50,14 @@ export default function ProgressScreen() {
   )
 }
 
-const styles = StyleSheet.create((theme, rt) => ({
+const styles = StyleSheet.create((theme) => ({
   root: {
     flex: 1,
     backgroundColor: theme.colors.surface,
   },
 
-  // ── Header
   header: {
     backgroundColor: theme.colors.accent,
-    paddingTop: rt.insets.top + theme.spacing.md,
-    paddingHorizontal: theme.spacing.md,
-    paddingBottom: theme.spacing.xxl,
   },
   headerEyebrow: {
     fontFamily: theme.font.family.body,
@@ -81,9 +78,7 @@ const styles = StyleSheet.create((theme, rt) => ({
   body: {
     flex: 1,
     backgroundColor: theme.colors.surface,
-    marginTop: -theme.spacing.lg,
-    borderTopLeftRadius: theme.radius.lg,
-    borderTopRightRadius: theme.radius.lg,
+    marginTop: -2,
   },
   bodyContent: {
     padding: theme.spacing.md,

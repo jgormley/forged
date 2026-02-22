@@ -1,5 +1,6 @@
 import { View, Text, ScrollView } from 'react-native'
 import { StyleSheet } from 'react-native-unistyles'
+import { ScreenHeader } from '@/components/ScreenHeader'
 
 interface AchievementCardProps {
   emoji: string
@@ -39,10 +40,10 @@ const MILESTONES: AchievementCardProps[] = [
 export default function ForgeScreen() {
   return (
     <View style={styles.root}>
-      <View style={styles.header}>
+      <ScreenHeader style={styles.header}>
         <Text style={styles.headerEyebrow}>Milestones & achievements</Text>
         <Text style={styles.headerTitle}>The Forge</Text>
-      </View>
+      </ScreenHeader>
 
       <ScrollView
         style={styles.body}
@@ -65,17 +66,14 @@ export default function ForgeScreen() {
   )
 }
 
-const styles = StyleSheet.create((theme, rt) => ({
+const styles = StyleSheet.create((theme) => ({
   root: {
     flex: 1,
-    backgroundColor: theme.colors.background,
+    backgroundColor: theme.colors.surface,
   },
 
   header: {
     backgroundColor: theme.colors.accentDark,
-    paddingTop: rt.insets.top + theme.spacing.md,
-    paddingHorizontal: theme.spacing.md,
-    paddingBottom: theme.spacing.xxl,
   },
   headerEyebrow: {
     fontFamily: theme.font.family.body,
@@ -95,9 +93,7 @@ const styles = StyleSheet.create((theme, rt) => ({
   body: {
     flex: 1,
     backgroundColor: theme.colors.surface,
-    marginTop: -theme.spacing.lg,
-    borderTopLeftRadius: theme.radius.lg,
-    borderTopRightRadius: theme.radius.lg,
+    marginTop: -2,
   },
   bodyContent: {
     padding: theme.spacing.md,

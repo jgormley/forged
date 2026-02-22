@@ -1,5 +1,6 @@
 import { View, Text, ScrollView, Pressable } from 'react-native'
 import { StyleSheet } from 'react-native-unistyles'
+import { ScreenHeader } from '@/components/ScreenHeader'
 
 const TODAY = new Date().toLocaleDateString('en-US', {
   weekday: 'long', month: 'long', day: 'numeric',
@@ -9,7 +10,7 @@ export default function TodayScreen() {
   return (
     <View style={styles.root}>
       {/* ── Hero ── */}
-      <View style={styles.hero}>
+      <ScreenHeader style={styles.hero}>
         <Text style={styles.heroDate}>{TODAY}</Text>
         <Text style={styles.heroGreeting}>Good morning ⚒️</Text>
 
@@ -25,7 +26,7 @@ export default function TodayScreen() {
             <Text style={styles.progressSub}>0 of 0 habits complete</Text>
           </View>
         </View>
-      </View>
+      </ScreenHeader>
 
       {/* ── Body ── */}
       <ScrollView
@@ -51,18 +52,14 @@ export default function TodayScreen() {
   )
 }
 
-const styles = StyleSheet.create((theme, rt) => ({
+const styles = StyleSheet.create((theme) => ({
   root: {
     flex: 1,
     backgroundColor: theme.colors.surface,
   },
 
-  // ── Hero
   hero: {
     backgroundColor: theme.colors.success,
-    paddingTop: rt.insets.top + theme.spacing.md,
-    paddingHorizontal: theme.spacing.md,
-    paddingBottom: theme.spacing.xxl,
   },
   heroDate: {
     fontFamily: theme.font.family.body,
@@ -123,9 +120,7 @@ const styles = StyleSheet.create((theme, rt) => ({
   body: {
     flex: 1,
     backgroundColor: theme.colors.surface,
-    marginTop: -theme.spacing.lg,
-    borderTopLeftRadius: theme.radius.lg,
-    borderTopRightRadius: theme.radius.lg,
+    marginTop: -2,
   },
   bodyContent: {
     padding: theme.spacing.md,
