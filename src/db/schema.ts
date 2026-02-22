@@ -1,4 +1,6 @@
 import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core'
+// Single source of truth for FrequencyConfig lives in the streak engine
+export type { FrequencyConfig } from '@/utils/streak'
 
 export type HabitCategory =
   | 'fitness'
@@ -8,11 +10,6 @@ export type HabitCategory =
   | 'focus'
   | 'recovery'
   | 'custom'
-
-export type FrequencyConfig =
-  | { type: 'daily' }
-  | { type: 'daysOfWeek'; days: number[] } // 0=Sun, 1=Mon, ..., 6=Sat
-  | { type: 'xPerWeek'; count: number }
 
 export const habits = sqliteTable('habits', {
   id: text('id').primaryKey(),
