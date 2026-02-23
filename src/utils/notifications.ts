@@ -1,6 +1,7 @@
 import * as Notifications from 'expo-notifications'
 import { SchedulableTriggerInputTypes } from 'expo-notifications'
 import type { HabitWithFrequency } from '@/stores/habitsStore'
+import { useNotificationSettingsStore } from '@/stores/notificationSettingsStore'
 
 // Configure how notifications appear when app is foregrounded
 Notifications.setNotificationHandler({
@@ -25,6 +26,7 @@ export async function requestNotificationPermissions(): Promise<boolean> {
 
 export async function scheduleHabitReminders(habit: HabitWithFrequency): Promise<void> {
   if (!habit.reminderTime) return
+  if (!useNotificationSettingsStore.getState().dailyReminders) return
   const [hourStr, minStr] = habit.reminderTime.split(':')
   const hour = parseInt(hourStr, 10)
   const minute = parseInt(minStr, 10)
@@ -64,4 +66,14 @@ export async function cancelHabitReminders(habitId: string): Promise<void> {
 export async function rescheduleHabitReminders(habit: HabitWithFrequency): Promise<void> {
   await cancelHabitReminders(habit.id)
   await scheduleHabitReminders(habit)
+}
+
+export async function cancelAllReminders(): Promise<void> {
+  await Notifications.cancelAllScheduledNotificationsAsync()
+}
+
+export async function rescheduleAllReminders(habits: HabitWithFrequency[]): Promise<void> {
+  await Promise.all(
+    habits.filter((h) => h.reminderTime).map((h) => scheduleHabitReminders(h))
+  )
 }

@@ -1,10 +1,35 @@
 import { View, Text, ScrollView, Alert, Platform } from 'react-native'
 import { router } from 'expo-router'
-import { StyleSheet } from 'react-native-unistyles'
+import { StyleSheet, UnistylesRuntime } from 'react-native-unistyles'
 import { ScreenHeader } from '@/components/ScreenHeader'
 import { Pressable } from '@/components/Pressable'
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import DateTimePicker from '@react-native-community/datetimepicker'
+import AsyncStorage from '@react-native-async-storage/async-storage'
+import { useNotificationSettingsStore } from '@/stores/notificationSettingsStore'
+import type { NotificationSettings } from '@/stores/notificationSettingsStore'
+import { cancelAllReminders, rescheduleAllReminders } from '@/utils/notifications'
+import { useHabitsStore } from '@/stores/habitsStore'
+
+type ThemeMode = 'light' | 'dark' | 'system'
+
+const THEME_KEY = '@forged/theme'
+const REMINDER_TIME_KEY = '@forged/defaultReminderTime'
+
+const THEME_OPTIONS: { value: ThemeMode; label: string }[] = [
+  { value: 'light',  label: 'Light'  },
+  { value: 'dark',   label: 'Dark'   },
+  { value: 'system', label: 'System' },
+]
+
+function applyTheme(mode: ThemeMode) {
+  if (mode === 'system') {
+    UnistylesRuntime.setAdaptiveThemes(true)
+  } else {
+    UnistylesRuntime.setAdaptiveThemes(false)
+    UnistylesRuntime.setTheme(mode)
+  }
+}
 
 function SettingsRow({
   label, value, chevron = true, destructive = false, onPress,
@@ -31,6 +56,88 @@ function SettingsSection({ title, children }: { title: string; children: React.R
   )
 }
 
+function SettingsToggleRow({
+  label, value, onChange,
+}: {
+  label: string; value: boolean; onChange: (v: boolean) => void
+}) {
+  return (
+    <View style={styles.row}>
+      <Text style={styles.rowLabel}>{label}</Text>
+      <View style={segmentStyles.track}>
+        <Pressable
+          onPress={() => onChange(false)}
+          style={[segmentStyles.option, !value && segmentStyles.optionActiveOff]}
+        >
+          <Text style={[segmentStyles.optionText, !value && segmentStyles.optionTextActive]}>Off</Text>
+        </Pressable>
+        <Pressable
+          onPress={() => onChange(true)}
+          style={[segmentStyles.option, value && segmentStyles.optionActive]}
+        >
+          <Text style={[segmentStyles.optionText, value && segmentStyles.optionTextActive]}>On</Text>
+        </Pressable>
+      </View>
+    </View>
+  )
+}
+
+function ThemeToggle({ value, onChange }: { value: ThemeMode; onChange: (m: ThemeMode) => void }) {
+  return (
+    <View style={segmentStyles.track}>
+      {THEME_OPTIONS.map((opt) => {
+        const active = opt.value === value
+        return (
+          <Pressable
+            key={opt.value}
+            onPress={() => onChange(opt.value)}
+            style={[segmentStyles.option, active && segmentStyles.optionActive]}
+          >
+            <Text style={[segmentStyles.optionText, active && segmentStyles.optionTextActive]}>
+              {opt.label}
+            </Text>
+          </Pressable>
+        )
+      })}
+    </View>
+  )
+}
+
+const segmentStyles = StyleSheet.create((theme) => ({
+  track: {
+    flexDirection: 'row',
+    backgroundColor: theme.colors.surfaceAlt,
+    borderRadius: theme.radius.sm,
+    padding: 3,
+    gap: 2,
+  },
+  option: {
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: 5,
+    borderRadius: theme.radius.xs,
+  },
+  optionActive: {
+    backgroundColor: theme.colors.accent,
+  },
+  optionActiveOff: {
+    backgroundColor: theme.colors.textTertiary,
+  },
+  optionText: {
+    fontFamily: theme.font.family.bodyMedium,
+    fontSize: theme.font.size.sm,
+    color: theme.colors.textSecondary,
+  },
+  optionTextActive: {
+    color: theme.colors.textInverse,
+  },
+}))
+
+function makeDefaultReminderDate(): Date {
+  const d = new Date()
+  d.setHours(8, 0, 0, 0)
+  return d
+}
+
 function formatSettingsTime(d: Date): string {
   const h = d.getHours()
   const m = d.getMinutes().toString().padStart(2, '0')
@@ -38,11 +145,62 @@ function formatSettingsTime(d: Date): string {
   return `${h % 12 || 12}:${m} ${ampm}`
 }
 
+function toHHMM(d: Date): string {
+  return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`
+}
+
+function parseHHMM(hhmm: string): Date {
+  const [h, m] = hhmm.split(':').map(Number)
+  const d = new Date()
+  d.setHours(h, m, 0, 0)
+  return d
+}
+
 export default function SettingsScreen() {
-  // TODO: persist to AsyncStorage when Settings screen is rebuilt in Phase 3
-  const [defaultReminderTime, setDefaultReminderTime] = useState<Date | null>(null)
+  const [defaultReminderTime, setDefaultReminderTime] = useState<Date>(makeDefaultReminderDate)
   const [showTimePicker, setShowTimePicker] = useState(false)
   const versionTaps = useRef(0)
+
+  const habits           = useHabitsStore((s) => s.habits)
+  const dailyReminders        = useNotificationSettingsStore((s) => s.dailyReminders)
+  const streakAlerts          = useNotificationSettingsStore((s) => s.streakAlerts)
+  const milestoneCelebrations = useNotificationSettingsStore((s) => s.milestoneCelebrations)
+  const updateNotifSettings   = useNotificationSettingsStore((s) => s.update)
+
+  const handleNotifChange = async (key: keyof NotificationSettings, value: boolean) => {
+    await updateNotifSettings({ [key]: value })
+    if (key === 'dailyReminders') {
+      if (value) {
+        await rescheduleAllReminders(habits)
+      } else {
+        await cancelAllReminders()
+      }
+    }
+  }
+
+  // Load persisted reminder time on mount
+  useEffect(() => {
+    AsyncStorage.getItem(REMINDER_TIME_KEY).then((value) => {
+      if (value) setDefaultReminderTime(parseHHMM(value))
+    })
+  }, [])
+
+  const handleReminderTimeChange = (date: Date) => {
+    setDefaultReminderTime(date)
+    AsyncStorage.setItem(REMINDER_TIME_KEY, toHHMM(date))
+  }
+
+  const [themeMode, setThemeMode] = useState<ThemeMode>(() =>
+    UnistylesRuntime.hasAdaptiveThemes
+      ? 'system'
+      : UnistylesRuntime.themeName === 'dark' ? 'dark' : 'light'
+  )
+
+  const handleThemeChange = (mode: ThemeMode) => {
+    setThemeMode(mode)
+    applyTheme(mode)
+    AsyncStorage.setItem(THEME_KEY, mode)
+  }
 
   const handleVersionTap = () => {
     versionTaps.current += 1
@@ -52,7 +210,7 @@ export default function SettingsScreen() {
     }
   }
 
-  const reminderValue = defaultReminderTime ? formatSettingsTime(defaultReminderTime) : 'None'
+  const reminderValue = formatSettingsTime(defaultReminderTime)
 
   return (
     <View style={styles.root}>
@@ -88,13 +246,28 @@ export default function SettingsScreen() {
         </SettingsSection>
 
         <SettingsSection title="Notifications">
-          <SettingsRow label="Daily reminder" value="Off" />
-          <SettingsRow label="Streak alerts" value="On" />
-          <SettingsRow label="Milestone celebrations" value="On" />
+          <SettingsToggleRow
+            label="Daily reminders"
+            value={dailyReminders}
+            onChange={(v) => handleNotifChange('dailyReminders', v)}
+          />
+          <SettingsToggleRow
+            label="Streak alerts"
+            value={streakAlerts}
+            onChange={(v) => handleNotifChange('streakAlerts', v)}
+          />
+          <SettingsToggleRow
+            label="Milestone celebrations"
+            value={milestoneCelebrations}
+            onChange={(v) => handleNotifChange('milestoneCelebrations', v)}
+          />
         </SettingsSection>
 
         <SettingsSection title="Appearance">
-          <SettingsRow label="Theme" value="System" />
+          <View style={styles.row}>
+            <Text style={styles.rowLabel}>Theme</Text>
+            <ThemeToggle value={themeMode} onChange={handleThemeChange} />
+          </View>
         </SettingsSection>
 
         <SettingsSection title="About">
@@ -113,24 +286,24 @@ export default function SettingsScreen() {
 
       {showTimePicker && Platform.OS === 'ios' && (
         <DateTimePicker
-          value={defaultReminderTime ?? (() => { const d = new Date(); d.setHours(8, 0, 0, 0); return d })()}
+          value={defaultReminderTime}
           mode="time"
           display="spinner"
           onChange={(_, date) => {
             setShowTimePicker(false)
-            if (date) setDefaultReminderTime(date)
+            if (date) handleReminderTimeChange(date)
           }}
         />
       )}
 
       {showTimePicker && Platform.OS === 'android' && (
         <DateTimePicker
-          value={defaultReminderTime ?? (() => { const d = new Date(); d.setHours(8, 0, 0, 0); return d })()}
+          value={defaultReminderTime}
           mode="time"
           display="default"
           onChange={(_, date) => {
             setShowTimePicker(false)
-            if (date) setDefaultReminderTime(date)
+            if (date) handleReminderTimeChange(date)
           }}
         />
       )}

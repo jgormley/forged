@@ -109,25 +109,25 @@ Last commit: `24cb57c` — "Complete Phase 1 core loop + polish"
 - [ ] `app/habit/[id].tsx` — full detail view: streak stats, completion rate, frequency label, edit shortcut, 90-day heatmap preview
 
 ### 2b — Stats Dashboard (Progress tab)
-- [ ] Wire real data to Progress screen (current/best streak per habit, overall completion rate)
-- [ ] `src/components/HeatmapCalendar.tsx` — year-at-a-glance grid using Skia
-- [ ] Per-habit sparkline charts (victory-native) on Progress screen
+- [x] Wire real data to Progress screen (current/best streak per habit, overall completion rate)
+- [x] `src/components/HeatmapCalendar.tsx` — year-at-a-glance grid using Skia
+- [x] Per-habit sparkline charts (victory-native) on Progress screen
 - [ ] Milestone history list on Progress screen
 
 ### 2c — Notifications
-- [ ] `expo-notifications` — per-habit reminder scheduling
-- [ ] Schedule on add, reschedule on edit, cancel on delete
-- [ ] `src/utils/notifications.ts` utility
-- [ ] Settings → "Default reminder time" and "Daily reminder" rows wired up
+- [x] `expo-notifications` — per-habit reminder scheduling
+- [x] Schedule on add, reschedule on edit, cancel on delete
+- [x] `src/utils/notifications.ts` utility
+- [x] Settings → "Default reminder time" and "Daily reminder" rows wired up
 
 ### 2d — Onboarding
-- [ ] `app/onboarding.tsx` — 3 screens: value prop, first habit creation, notification opt-in
-- [ ] First-launch detection (AsyncStorage or DB flag)
-- [ ] Skip straight to Today on subsequent launches
+- [x] `app/onboarding.tsx` — 3 screens: value prop, first habit creation, notification opt-in
+- [x] First-launch detection (AsyncStorage or DB flag)
+- [x] Skip straight to Today on subsequent launches
 
 ### 2e — Theme Toggle
-- [ ] Settings → "Theme" row: Light / Dark / System (currently System-only via adaptiveThemes)
-- [ ] Persist preference via AsyncStorage + Unistyles `setAdaptedTheme`
+- [x] Settings → "Theme" row: Light / Dark / System (currently System-only via adaptiveThemes)
+- [x] Persist preference via AsyncStorage + Unistyles `setAdaptedTheme`
 
 ---
 
@@ -147,6 +147,9 @@ Last commit: `24cb57c` — "Complete Phase 1 core loop + polish"
 ## 🔲 Phase 4 — Polish + Submission
 
 - [ ] Loading skeletons + error states
+- [ ] Audit accessibility, including light/dark theme color contrast
+- [ ] Audit app for look and feel against the theme/style, including onboarding flow
+- [ ] Audit the app for safe area, especially for Android.  E.g., privacy policy and edit habit
 - [x] Sentry crash reporting (`@sentry/react-native`)
 - [ ] Export data (CSV) from Settings
 - [ ] Delete all data from Settings (with confirmation)

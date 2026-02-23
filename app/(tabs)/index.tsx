@@ -8,6 +8,7 @@ import { HabitCard } from '@/components/HabitCard'
 import { useHabitsStore } from '@/stores/habitsStore'
 import { useCompletionsStore, toDateKey } from '@/stores/completionsStore'
 import { useUIStore, getMilestoneTier } from '@/stores/uiStore'
+import { useNotificationSettingsStore } from '@/stores/notificationSettingsStore'
 import { calculateCurrentStreak } from '@/utils/streak'
 import type { Completion } from '@/db/schema'
 
@@ -54,7 +55,8 @@ export default function TodayScreen() {
   const completedTodayIds = useCompletionsStore((s) => s.completedTodayIds)
   const loadAll          = useCompletionsStore((s) => s.loadAll)
   const toggle           = useCompletionsStore((s) => s.toggle)
-  const showMilestone    = useUIStore((s) => s.showMilestone)
+  const showMilestone           = useUIStore((s) => s.showMilestone)
+  const milestoneCelebrations   = useNotificationSettingsStore((s) => s.milestoneCelebrations)
 
   useEffect(() => {
     loadHabits()
@@ -84,7 +86,7 @@ export default function TodayScreen() {
 
   const handleToggle = useCallback(async (habitId: string, currentStreak: number) => {
     const result = await toggle(habitId)
-    if (result) {
+    if (result && milestoneCelebrations) {
       // Habit was just completed — check for milestone
       const newStreak = currentStreak + 1
       const tier = getMilestoneTier(newStreak)
@@ -101,7 +103,7 @@ export default function TodayScreen() {
         }
       }
     }
-  }, [toggle, habits, showMilestone])
+  }, [toggle, habits, showMilestone, milestoneCelebrations])
 
   return (
     <View style={styles.root}>

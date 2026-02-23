@@ -2,6 +2,8 @@ import * as Sentry from '@sentry/react-native'
 import { useEffect } from 'react'
 import { Stack, router } from 'expo-router'
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import { UnistylesRuntime } from 'react-native-unistyles'
+import { useNotificationSettingsStore } from '@/stores/notificationSettingsStore'
 import { StatusBar } from 'expo-status-bar'
 import { View, ActivityIndicator, Text } from 'react-native'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
@@ -55,6 +57,25 @@ function RootLayout() {
   })
 
   const ready = dbReady && fontsLoaded
+
+  // Load persisted settings as early as possible.
+  useEffect(() => {
+    useNotificationSettingsStore.getState().load()
+  }, [])
+
+  // Restore theme preference as early as possible (before first paint).
+  useEffect(() => {
+    AsyncStorage.getItem('@forged/theme').then((value) => {
+      if (value === 'light') {
+        UnistylesRuntime.setAdaptiveThemes(false)
+        UnistylesRuntime.setTheme('light')
+      } else if (value === 'dark') {
+        UnistylesRuntime.setAdaptiveThemes(false)
+        UnistylesRuntime.setTheme('dark')
+      }
+      // 'system' or null → leave adaptiveThemes: true (config default)
+    })
+  }, [])
 
   useEffect(() => {
     if (ready || dbError || fontError) {
