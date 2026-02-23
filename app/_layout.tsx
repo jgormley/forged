@@ -30,12 +30,11 @@ import { useFonts } from 'expo-font'
 
 Sentry.init({
   dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
-  debug: true, // TODO: remove after verifying Sentry
-  enabled: true, //!__DEV__,
-  tracesSampleRate: 1, //0.2,
-  profilesSampleRate: 1, //0.2,
+  debug: false,
+  enabled: !__DEV__,
+  tracesSampleRate: 0.2,
+  profilesSampleRate: 0.2,
 })
-Sentry.captureMessage('Sentry init test — delete me') // TODO: remove
 
 // Hold the splash until fonts + DB migration are both ready.
 SplashScreen.preventAutoHideAsync()
