@@ -165,6 +165,13 @@ export const lightTheme = {
     // Streak
     streakFire:    '#C8A84B',
 
+    // Heatmap contribution calendar — gold intensity levels (0=none, 4=full)
+    heatmapL0: 'rgba(44,36,22,0.08)',
+    heatmapL1: 'rgba(200,168,75,0.28)',
+    heatmapL2: 'rgba(200,168,75,0.55)',
+    heatmapL3: 'rgba(200,168,75,0.80)',
+    heatmapL4: '#C8A84B',
+
     // Overlays
     overlay:       'rgba(44,36,22,0.50)',
     overlayLight:  'rgba(44,36,22,0.05)',
@@ -244,6 +251,12 @@ export const darkTheme: typeof lightTheme = {
     tabBarBorder: 'rgba(249,245,236,0.06)',
 
     streakFire:   '#C8A84B',
+
+    heatmapL0: 'rgba(249,245,236,0.06)',
+    heatmapL1: 'rgba(200,168,75,0.30)',
+    heatmapL2: 'rgba(200,168,75,0.56)',
+    heatmapL3: 'rgba(200,168,75,0.80)',
+    heatmapL4: '#C8A84B',
 
     overlay:      'rgba(0,0,0,0.70)',
     overlayLight: 'rgba(249,245,236,0.03)',

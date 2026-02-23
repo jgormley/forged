@@ -1,48 +1,41 @@
 import { View, Text, ScrollView } from 'react-native'
+import { useMemo } from 'react'
 import { StyleSheet } from 'react-native-unistyles'
+import { useLiveQuery } from 'drizzle-orm/expo-sqlite'
 import { ScreenHeader } from '@/components/ScreenHeader'
+import { HeatmapCalendar } from '@/components/HeatmapCalendar'
+import { HabitStatCard } from '@/components/HabitStatCard'
+import { useHabitsStore } from '@/stores/habitsStore'
+import { toDateKey } from '@/stores/completionsStore'
+import { db } from '@/db/client'
+import { completions } from '@/db/schema'
+import {
+  calculateCurrentStreak,
+  calculateLongestStreak,
+  getCompletionRate,
+} from '@/utils/streak'
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Milestones (merged from Forge)
+// Milestone definitions (base data — earned flags computed from live data)
 // ─────────────────────────────────────────────────────────────────────────────
 
-interface AchievementCardProps {
+interface MilestoneDef {
   emoji: string
   title: string
   description: string
-  earned: boolean
   requirement: string
-  dateEarned?: string
 }
 
-function AchievementCard({ emoji, title, description, earned, requirement, dateEarned }: AchievementCardProps) {
-  return (
-    <View style={[styles.achCard, earned && styles.achCardEarned]}>
-      <View style={[styles.achBadge, earned ? styles.achBadgeEarned : styles.achBadgeLocked]}>
-        <Text style={[styles.achEmoji, !earned && styles.achEmojiLocked]}>{emoji}</Text>
-      </View>
-      <View style={styles.achInfo}>
-        <Text style={[styles.achTitle, !earned && styles.achTitleLocked]}>{title}</Text>
-        <Text style={styles.achDesc}>{description}</Text>
-        {earned && dateEarned
-          ? <Text style={styles.achDate}>Earned {dateEarned}</Text>
-          : <Text style={styles.achRequirement}>{requirement}</Text>
-        }
-      </View>
-    </View>
-  )
-}
-
-const MILESTONES: AchievementCardProps[] = [
-  { emoji: '🌱', title: 'First Spark',    description: 'Complete your first habit',         earned: false, requirement: 'Complete 1 habit to unlock' },
-  { emoji: '🔥', title: 'Week Forged',    description: 'Maintain any habit for 7 days',     earned: false, requirement: '7-day streak required' },
-  { emoji: '⚒️', title: 'Iron Will',     description: 'Reach a 30-day streak',             earned: false, requirement: '30-day streak required' },
-  { emoji: '🏆', title: 'Century',        description: 'Complete 100 habit check-ins',       earned: false, requirement: '100 total completions' },
-  { emoji: '🌿', title: 'Roots Run Deep', description: 'Track 5 different habits',           earned: false, requirement: 'Add 5 habits to unlock' },
+const MILESTONE_DEFS: MilestoneDef[] = [
+  { emoji: '🌱', title: 'First Spark',    description: 'Complete your first habit',       requirement: 'Complete 1 habit to unlock' },
+  { emoji: '🔥', title: 'Week Forged',    description: 'Maintain any habit for 7 days',   requirement: '7-day streak required' },
+  { emoji: '⚒️', title: 'Iron Will',     description: 'Reach a 30-day streak',           requirement: '30-day streak required' },
+  { emoji: '🏆', title: 'Century',        description: 'Complete 100 habit check-ins',     requirement: '100 total completions' },
+  { emoji: '🌿', title: 'Roots Run Deep', description: 'Track 5 different habits',         requirement: 'Add 5 habits to unlock' },
 ]
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Stats
+// Sub-components
 // ─────────────────────────────────────────────────────────────────────────────
 
 function StatBox({ value, label }: { value: string; label: string }) {
@@ -54,11 +47,116 @@ function StatBox({ value, label }: { value: string; label: string }) {
   )
 }
 
+interface AchievementCardProps extends MilestoneDef {
+  earned: boolean
+}
+
+function AchievementCard({ emoji, title, description, earned, requirement }: AchievementCardProps) {
+  return (
+    <View style={[styles.achCard, earned && styles.achCardEarned]}>
+      <View style={[styles.achBadge, earned ? styles.achBadgeEarned : styles.achBadgeLocked]}>
+        <Text style={[styles.achEmoji, !earned && styles.achEmojiLocked]}>{emoji}</Text>
+      </View>
+      <View style={styles.achInfo}>
+        <Text style={[styles.achTitle, !earned && styles.achTitleLocked]}>{title}</Text>
+        <Text style={styles.achDesc}>{description}</Text>
+        <Text style={earned ? styles.achEarned : styles.achRequirement}>
+          {earned ? 'Earned' : requirement}
+        </Text>
+      </View>
+    </View>
+  )
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Screen
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function ProgressScreen() {
+  const habits = useHabitsStore((s) => s.habits)
+
+  // Load ALL completions (no date filter) so streak + total calculations are all-time accurate
+  const { data: rawCompletions = [] } = useLiveQuery(db.select().from(completions))
+
+  const today = useMemo(() => {
+    const d = new Date()
+    d.setHours(0, 0, 0, 0)
+    return d
+  }, [])
+
+  // ── Per-habit completion dates (all-time)
+  const completionsByHabit = useMemo<Map<string, Date[]>>(() => {
+    const map = new Map<string, Date[]>()
+    for (const c of rawCompletions) {
+      const arr = map.get(c.habitId)
+      const date = new Date(c.completedAt)
+      if (arr) arr.push(date)
+      else map.set(c.habitId, [date])
+    }
+    return map
+  }, [rawCompletions])
+
+  // ── Heatmap: unique habits completed per calendar day (past year only)
+  const heatmapData = useMemo<Map<string, number>>(() => {
+    const yearAgo = new Date(today)
+    yearAgo.setFullYear(yearAgo.getFullYear() - 1)
+    const yearAgoKey = toDateKey(yearAgo)
+
+    const byDay = new Map<string, Set<string>>()
+    for (const c of rawCompletions) {
+      const key = toDateKey(new Date(c.completedAt))
+      if (key < yearAgoKey) continue
+      const set = byDay.get(key) ?? new Set<string>()
+      set.add(c.habitId)
+      byDay.set(key, set)
+    }
+    const map = new Map<string, number>()
+    byDay.forEach((set, key) => map.set(key, set.size))
+    return map
+  }, [rawCompletions, today])
+
+  // ── Global stats across all active habits
+  const globalStats = useMemo(() => {
+    if (habits.length === 0) {
+      return { currentStreak: 0, bestStreak: 0, thisMonth: 0 }
+    }
+
+    let maxCurrent = 0
+    let maxBest    = 0
+    let rateSum    = 0
+    const daysIntoMonth = today.getDate()
+
+    for (const habit of habits) {
+      const dates = completionsByHabit.get(habit.id) ?? []
+      const curr  = calculateCurrentStreak(dates, habit.frequency, today)
+      const best  = calculateLongestStreak(dates, habit.frequency)
+      if (curr > maxCurrent) maxCurrent = curr
+      if (best > maxBest)    maxBest    = best
+      rateSum += getCompletionRate(dates, habit.frequency, daysIntoMonth, today)
+    }
+
+    return {
+      currentStreak: maxCurrent,
+      bestStreak:    maxBest,
+      thisMonth:     Math.round((rateSum / habits.length) * 100),
+    }
+  }, [habits, completionsByHabit, today])
+
+  // ── Milestone earned flags
+  const milestones = useMemo(() => [
+    { ...MILESTONE_DEFS[0], earned: rawCompletions.length > 0 },
+    { ...MILESTONE_DEFS[1], earned: globalStats.bestStreak >= 7 },
+    { ...MILESTONE_DEFS[2], earned: globalStats.bestStreak >= 30 },
+    { ...MILESTONE_DEFS[3], earned: rawCompletions.length >= 100 },
+    { ...MILESTONE_DEFS[4], earned: habits.length >= 5 },
+  ], [rawCompletions.length, globalStats.bestStreak, habits.length])
+
+  // ── Formatted stat values
+  const hasHabits = habits.length > 0
+  const statCurrentStreak = hasHabits ? String(globalStats.currentStreak) : '—'
+  const statBestStreak    = hasHabits ? String(globalStats.bestStreak) : '—'
+  const statThisMonth     = hasHabits ? `${globalStats.thisMonth}%` : '—'
+
   return (
     <View style={styles.root}>
       <ScreenHeader style={styles.header}>
@@ -70,32 +168,48 @@ export default function ProgressScreen() {
         contentContainerStyle={styles.bodyContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* ── Stats ── */}
+        {/* ── Global stat boxes */}
         <View style={styles.statsRow}>
-          <StatBox value="—" label="Current streak" />
-          <StatBox value="—" label="Best streak" />
-          <StatBox value="—" label="This month" />
+          <StatBox value={statCurrentStreak} label="Current streak" />
+          <StatBox value={statBestStreak}    label="Best streak" />
+          <StatBox value={statThisMonth}     label="This month" />
         </View>
 
-        {/* ── Year at a glance ── */}
+        {/* ── Year at a glance */}
         <Text style={styles.sectionTitle}>Year at a glance</Text>
-        <View style={styles.placeholderCard}>
-          <Text style={styles.placeholderIcon}>📅</Text>
-          <Text style={styles.placeholderText}>
-            Your contribution graph will appear here once you start tracking habits.
-          </Text>
+        <View style={styles.calendarCard}>
+          {rawCompletions.length === 0 ? (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyIcon}>📅</Text>
+              <Text style={styles.emptyText}>
+                Your contribution graph will appear here once you start tracking habits.
+              </Text>
+            </View>
+          ) : (
+            <HeatmapCalendar data={heatmapData} />
+          )}
         </View>
 
-        {/* ── Habit breakdown ── */}
+        {/* ── Habit breakdown */}
         <Text style={styles.sectionTitle}>Habit breakdown</Text>
-        <View style={styles.placeholderCard}>
-          <Text style={styles.placeholderIcon}>🌿</Text>
-          <Text style={styles.placeholderText}>
-            Per-habit streaks and completion rates will appear here.
-          </Text>
-        </View>
+        {habits.length === 0 ? (
+          <View style={styles.placeholderCard}>
+            <Text style={styles.placeholderIcon}>🌿</Text>
+            <Text style={styles.placeholderText}>
+              Per-habit streaks and completion rates will appear here.
+            </Text>
+          </View>
+        ) : (
+          habits.map((habit) => (
+            <HabitStatCard
+              key={habit.id}
+              habit={habit}
+              completionDates={completionsByHabit.get(habit.id) ?? []}
+            />
+          ))
+        )}
 
-        {/* ── Milestones ── */}
+        {/* ── Milestones */}
         <Text style={styles.sectionTitle}>Milestones</Text>
         <View style={styles.callout}>
           <Text style={styles.calloutText}>
@@ -103,7 +217,7 @@ export default function ProgressScreen() {
             testament to your craft.
           </Text>
         </View>
-        {MILESTONES.map((m) => (
+        {milestones.map((m) => (
           <AchievementCard key={m.title} {...m} />
         ))}
 
@@ -145,6 +259,14 @@ const styles = StyleSheet.create((theme) => ({
     paddingBottom: theme.spacing.xxxl,
   },
 
+  // ── Section titles
+  sectionTitle: {
+    fontFamily: theme.font.family.display,
+    fontSize: theme.font.size.lg,
+    color: theme.colors.text,
+    marginBottom: theme.spacing.sm,
+  },
+
   // ── Stats row
   statsRow: {
     flexDirection: 'row',
@@ -176,15 +298,32 @@ const styles = StyleSheet.create((theme) => ({
     marginTop: 2,
   },
 
-  // ── Section titles
-  sectionTitle: {
-    fontFamily: theme.font.family.display,
-    fontSize: theme.font.size.lg,
-    color: theme.colors.text,
-    marginBottom: theme.spacing.sm,
+  // ── Heatmap card
+  calendarCard: {
+    backgroundColor: theme.colors.surfaceRaised,
+    borderRadius: theme.radius.md,
+    padding: theme.spacing.md,
+    borderWidth: 1,
+    borderColor: theme.colors.borderSubtle,
+    marginBottom: theme.spacing.xl,
   },
 
-  // ── Placeholder cards
+  // ── Empty / placeholder states
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: theme.spacing.md,
+  },
+  emptyIcon: {
+    fontSize: 36,
+    marginBottom: theme.spacing.sm,
+  },
+  emptyText: {
+    fontFamily: theme.font.family.body,
+    fontSize: theme.font.size.md,
+    color: theme.colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: theme.font.size.md * theme.font.lineHeight.normal,
+  },
   placeholderCard: {
     backgroundColor: theme.colors.surfaceRaised,
     borderRadius: theme.radius.md,
@@ -206,7 +345,7 @@ const styles = StyleSheet.create((theme) => ({
     lineHeight: theme.font.size.md * theme.font.lineHeight.normal,
   },
 
-  // ── Milestones callout
+  // ── Milestones
   callout: {
     backgroundColor: theme.colors.accentSubtle,
     borderRadius: theme.radius.md,
@@ -222,8 +361,6 @@ const styles = StyleSheet.create((theme) => ({
     lineHeight: theme.font.size.md * theme.font.lineHeight.loose,
     textAlign: 'center',
   },
-
-  // ── Achievement cards
   achCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -276,7 +413,7 @@ const styles = StyleSheet.create((theme) => ({
     color: theme.colors.textSecondary,
     marginTop: 2,
   },
-  achDate: {
+  achEarned: {
     fontFamily: theme.font.family.body,
     fontSize: theme.font.size.xs,
     color: theme.colors.accent,

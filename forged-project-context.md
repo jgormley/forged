@@ -659,3 +659,25 @@ export const posthog = new PostHog(process.env.EXPO_PUBLIC_POSTHOG_API_KEY!, {
 ---
 
 *Document generated from planning session. Last updated: February 2026.*
+
+---
+
+## 15. Deferred: ScreenHeader Arc Transparency
+
+The `ScreenHeader` component renders a large circle (`heroCap` View) at the bottom of the colored header to create a curved arc transition. Currently it uses `backgroundColor: theme.colors.surface` — a solid paint that matches the body, faking the curve. The goal is to make the arc region transparent so scrolled body content is visible through it.
+
+Four approaches, ranked by complexity:
+
+**Option 1 — Content scrolls under an opaque header (lowest effort)**
+Keep the solid arc but position the header absolutely and start the ScrollView at y=0, so body content physically slides beneath the header/arc. The arc stays opaque but the illusion of content "through" the arc comes from the layering. No SVG or Skia needed.
+
+**Option 2 — SVG mask (`react-native-svg`)**
+Replace the header background View with an SVG `<Path>` that draws the header shape with a curved bottom cutout, leaving the arc region genuinely transparent (no fill). Body content renders beneath and shows through the hole. Requires computing the Bézier path for the arc from screen dimensions.
+
+**Option 3 — Skia canvas (`@shopify/react-native-skia`, already installed)**
+Same concept as Option 2 but using a Skia `Canvas` + `Path` with a clip. Skia is already in the project (via victory-native), so no new dependency. Similar complexity to SVG but more control over rendering.
+
+**Option 4 — `overflow: 'hidden'` clip (not viable)**
+Standard RN Views can't subtract shapes — you can't punch a hole in a View. Ruled out.
+
+Recommended starting point: **Option 1** for a quick win, **Option 3** (Skia) for the true transparent effect.

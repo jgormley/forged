@@ -3,7 +3,7 @@ import { router } from 'expo-router'
 import { StyleSheet } from 'react-native-unistyles'
 import { ScreenHeader } from '@/components/ScreenHeader'
 import { Pressable } from '@/components/Pressable'
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import DateTimePicker from '@react-native-community/datetimepicker'
 
 function SettingsRow({
@@ -42,6 +42,15 @@ export default function SettingsScreen() {
   // TODO: persist to AsyncStorage when Settings screen is rebuilt in Phase 3
   const [defaultReminderTime, setDefaultReminderTime] = useState<Date | null>(null)
   const [showTimePicker, setShowTimePicker] = useState(false)
+  const versionTaps = useRef(0)
+
+  const handleVersionTap = () => {
+    versionTaps.current += 1
+    if (versionTaps.current >= 5) {
+      versionTaps.current = 0
+      router.push('/debug')
+    }
+  }
 
   const reminderValue = defaultReminderTime ? formatSettingsTime(defaultReminderTime) : 'None'
 
@@ -92,13 +101,14 @@ export default function SettingsScreen() {
           <SettingsRow label="Rate Forged" />
           <SettingsRow label="Privacy Policy" onPress={() => router.push('/legal/privacy')} />
           <SettingsRow label="Terms of Service" onPress={() => router.push('/legal/terms')} />
-          <SettingsRow label="Version" value="1.0.0" chevron={false} />
+          <SettingsRow label="Version" value="1.0.0" chevron={false} onPress={handleVersionTap} />
         </SettingsSection>
 
         <SettingsSection title="Data">
           <SettingsRow label="Export data" />
           <SettingsRow label="Delete all data" destructive chevron={false} />
         </SettingsSection>
+
       </ScrollView>
 
       {showTimePicker && Platform.OS === 'ios' && (
@@ -244,4 +254,6 @@ const styles = StyleSheet.create((theme) => ({
     color: theme.colors.textTertiary,
     lineHeight: theme.font.size.xl,
   },
+
+
 }))

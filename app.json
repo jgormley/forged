@@ -9,18 +9,19 @@
     "newArchEnabled": true,
     "scheme": "forged",
     "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#0a0a0a"
+      "image": "./assets/forged-logo.png",
+      "resizeMode": "cover",
+      "backgroundColor": "#C8A84B"
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.forgedapp.forged"
+      "bundleIdentifier": "com.forgedapp.forged",
+      "appleTeamId": "YT3798448G"
     },
     "android": {
       "package": "com.forgedapp.forged",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/forged-logo.png",
+        "foregroundImage": "./assets/forged-logo-android-adaptive.png",
         "backgroundColor": "#4A6741"
       },
       "edgeToEdgeEnabled": true
@@ -35,7 +36,14 @@
           "color": "#0a0a0a"
         }
       ],
-      "expo-dev-client"
+      "expo-dev-client",
+      [
+        "@sentry/react-native/expo",
+        {
+          "organization": "yellow-bike-studio",
+          "project": "react-native"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
