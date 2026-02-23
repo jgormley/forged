@@ -30,10 +30,10 @@ import { useFonts } from 'expo-font'
 
 Sentry.init({
   dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
-  debug: false,
-  enabled: !__DEV__,
-  tracesSampleRate: 0.2,
-  profilesSampleRate: 0.2,
+  debug: true,
+  enabled: true,
+  tracesSampleRate: 1,
+  profilesSampleRate: 1,
 })
 
 // Hold the splash until fonts + DB migration are both ready.
