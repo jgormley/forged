@@ -4,7 +4,8 @@ import {
 } from 'react-native'
 import { Pressable } from '@/components/Pressable'
 import { useState, useCallback } from 'react'
-import { router } from 'expo-router'
+import { router, useLocalSearchParams } from 'expo-router'
+import { ONBOARDING_PRESETS } from '@/utils/onboardingPresets'
 import { StyleSheet } from 'react-native-unistyles'
 import { useHabitsStore } from '@/stores/habitsStore'
 import { HabitCard } from '@/components/HabitCard'
@@ -70,11 +71,20 @@ function toHHMM(d: Date): string {
 
 export default function NewHabitScreen() {
   const add = useHabitsStore((s) => s.add)
-  const [name,            setName]            = useState('')
-  const [icon,            setIcon]            = useState(EMOJI_QUICKPICKS[0])
-  const [color,           setColor]           = useState(HABIT_COLORS[0])
-  const [freqType,        setFreqType]        = useState<FreqType>('daily')
-  const [selectedDays,    setSelectedDays]    = useState<number[]>([1, 2, 3, 4, 5])
+  const { preset: presetKey } = useLocalSearchParams<{ preset?: string }>()
+  const presetData = presetKey ? ONBOARDING_PRESETS[presetKey] : undefined
+
+  const [name,            setName]            = useState(() => presetData?.name ?? '')
+  const [icon,            setIcon]            = useState(() => presetData?.icon ?? EMOJI_QUICKPICKS[0])
+  const [color,           setColor]           = useState(() => presetData?.color ?? HABIT_COLORS[0])
+  const [freqType,        setFreqType]        = useState<FreqType>(() =>
+    (presetData?.frequency.type as FreqType | undefined) ?? 'daily'
+  )
+  const [selectedDays,    setSelectedDays]    = useState<number[]>(() =>
+    presetData?.frequency.type === 'daysOfWeek'
+      ? [...presetData.frequency.days]
+      : [1, 2, 3, 4, 5]
+  )
   const [xPerWeek,        setXPerWeek]        = useState(3)
   const [saving,          setSaving]          = useState(false)
   const [pickerOpen,      setPickerOpen]      = useState(false)
@@ -111,7 +121,7 @@ export default function NewHabitScreen() {
         name: name.trim(),
         icon,
         color,
-        category: 'custom',
+        category: presetData?.category ?? 'custom',
         frequency,
         reminderTime: reminderEnabled ? toHHMM(reminderTime) : null,
       })
