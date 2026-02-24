@@ -10,6 +10,7 @@ import { useCompletionsStore, toDateKey } from '@/stores/completionsStore'
 import { useUIStore, getMilestoneTier } from '@/stores/uiStore'
 import { useNotificationSettingsStore } from '@/stores/notificationSettingsStore'
 import { calculateCurrentStreak } from '@/utils/streak'
+import { posthog } from '@/analytics/posthog'
 import type { Completion } from '@/db/schema'
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -86,20 +87,25 @@ export default function TodayScreen() {
 
   const handleToggle = useCallback(async (habitId: string, currentStreak: number) => {
     const result = await toggle(habitId)
-    if (result && milestoneCelebrations) {
-      // Habit was just completed — check for milestone
+    if (result) {
+      // Habit was just completed
       const newStreak = currentStreak + 1
-      const tier = getMilestoneTier(newStreak)
-      if (tier) {
-        const habit = habits.find((h) => h.id === habitId)
-        if (habit) {
-          showMilestone({
-            habitId,
-            habitName: habit.name,
-            habitIcon: habit.icon,
-            streak: newStreak,
-            tier,
-          })
+      posthog.capture('habit_completed', { habit_id: habitId, streak: newStreak })
+
+      if (milestoneCelebrations) {
+        const tier = getMilestoneTier(newStreak)
+        if (tier) {
+          const habit = habits.find((h) => h.id === habitId)
+          if (habit) {
+            posthog.capture('streak_milestone', { habit_id: habitId, streak: newStreak, tier })
+            showMilestone({
+              habitId,
+              habitName: habit.name,
+              habitIcon: habit.icon,
+              streak: newStreak,
+              tier,
+            })
+          }
         }
       }
     }

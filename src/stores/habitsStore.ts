@@ -9,6 +9,7 @@ import {
   cancelHabitReminders,
   rescheduleHabitReminders,
 } from '@/utils/notifications'
+import { posthog } from '@/analytics/posthog'
 
 // ---------------------------------------------------------------------------
 // Helpers — FrequencyConfig <-> JSON column
@@ -102,6 +103,12 @@ export const useHabitsStore = create<HabitsState>((set, get) => ({
     const habit = toHabitWithFrequency(newRow as Habit)
     set((s) => ({ habits: [...s.habits, habit] }))
     scheduleHabitReminders(habit)
+    posthog.capture('habit_created', {
+      habit_id: habit.id,
+      category: habit.category,
+      frequency_type: habit.frequency.type,
+      has_reminder: !!habit.reminderTime,
+    })
     return habit
   },
 
@@ -127,6 +134,7 @@ export const useHabitsStore = create<HabitsState>((set, get) => ({
     await db.delete(habits).where(eq(habits.id, id))
     set((s) => ({ habits: s.habits.filter((h) => h.id !== id) }))
     cancelHabitReminders(id)
+    posthog.capture('habit_deleted', { habit_id: id })
   },
 
   archive: async (id) => {

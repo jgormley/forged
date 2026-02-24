@@ -10,6 +10,7 @@ import { db } from '@/db/client'
 import { completions } from '@/db/schema'
 import type { NewCompletion } from '@/db/schema'
 import { randomUUID } from 'expo-crypto'
+import { posthog } from '@/analytics/posthog'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Mock data
@@ -89,6 +90,7 @@ export default function DebugScreen() {
   const add = useHabitsStore((s) => s.add)
   const [mockState, setMockState] = useState<ActionState>('idle')
   const [sentryState, setSentryState] = useState<ActionState>('idle')
+  const [posthogState, setPosthogState] = useState<ActionState>('idle')
   const [onboardingResetState, setOnboardingResetState] = useState<ActionState>('idle')
 
   const handleAddMockHabit = async () => {
@@ -147,6 +149,26 @@ export default function DebugScreen() {
             }
           }}
           state={onboardingResetState}
+        />
+
+        <Text style={styles.sectionLabel}>PostHog</Text>
+
+        <DebugButton
+          label="Send Test Event to PostHog"
+          description="Captures a 'user_signed_up' event and flushes immediately to verify the PostHog integration."
+          onPress={async () => {
+            setPosthogState('loading')
+            try {
+              posthog.capture('user_signed_up')
+              await posthog.flush()
+              setPosthogState('done')
+              Alert.alert('Sent', 'Test event sent to PostHog.')
+            } catch (e) {
+              Alert.alert('Error', String(e))
+              setPosthogState('error')
+            }
+          }}
+          state={posthogState}
         />
 
         <Text style={styles.sectionLabel}>Sentry</Text>

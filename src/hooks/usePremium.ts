@@ -1,19 +1,20 @@
 import { useState, useEffect, useCallback } from 'react'
+import { Platform } from 'react-native'
 import Purchases, { type CustomerInfo } from 'react-native-purchases'
 
 const ENTITLEMENT_ID = 'forged_premium_lifetime'
-const FREE_HABIT_LIMIT = 3
+export const FREE_HABIT_LIMIT = 3
 
-// RevenueCat API keys — set these before Phase 3 build
 const RC_API_KEY_IOS = process.env.EXPO_PUBLIC_RC_API_KEY_IOS ?? ''
 const RC_API_KEY_ANDROID = process.env.EXPO_PUBLIC_RC_API_KEY_ANDROID ?? ''
 
 let rcConfigured = false
 
-function configureRevenueCat(platform: 'ios' | 'android') {
+// Call this once at app startup (module scope in _layout.tsx).
+export function configureRevenueCat() {
   if (rcConfigured) return
-  const key = platform === 'ios' ? RC_API_KEY_IOS : RC_API_KEY_ANDROID
-  if (!key) return // Not yet configured — skip silently
+  const key = Platform.OS === 'ios' ? RC_API_KEY_IOS : RC_API_KEY_ANDROID
+  if (!key) return // Keys not yet set — skip silently
   Purchases.configure({ apiKey: key })
   rcConfigured = true
 }
@@ -50,7 +51,6 @@ export function usePremium(): PremiumState {
       const info = await Purchases.getCustomerInfo()
       setIsPremium(isPremiumFromInfo(info))
     } catch {
-      // Fail open — treat as free
       setIsPremium(false)
     } finally {
       setIsLoading(false)
@@ -58,9 +58,13 @@ export function usePremium(): PremiumState {
   }, [])
 
   useEffect(() => {
-    const { Platform } = require('react-native')
-    configureRevenueCat(Platform.OS === 'ios' ? 'ios' : 'android')
     refresh()
+
+    if (!rcConfigured) return
+    // Keep isPremium in sync if the user's entitlements change (e.g. subscription lapse)
+    const listener = (info: CustomerInfo) => setIsPremium(isPremiumFromInfo(info))
+    Purchases.addCustomerInfoUpdateListener(listener)
+    return () => { Purchases.removeCustomerInfoUpdateListener(listener) }
   }, [refresh])
 
   const purchase = useCallback(async (): Promise<boolean> => {

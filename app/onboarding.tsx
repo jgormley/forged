@@ -8,6 +8,7 @@ import { LinearGradient } from 'expo-linear-gradient'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useHabitsStore } from '@/stores/habitsStore'
 import { requestNotificationPermissions } from '@/utils/notifications'
+import { posthog } from '@/analytics/posthog'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -280,7 +281,7 @@ const pickStyles = StyleSheet.create((theme) => ({
 // Screen 2 — Notifications
 // ─────────────────────────────────────────────────────────────────────────────
 
-function NotificationsScreen({ onDone }: { onDone: () => void }) {
+function NotificationsScreen({ onDone }: { onDone: (notificationsEnabled: boolean) => void }) {
   const [loading, setLoading] = useState(false)
 
   const handleEnable = async () => {
@@ -289,7 +290,7 @@ function NotificationsScreen({ onDone }: { onDone: () => void }) {
       await requestNotificationPermissions()
     } finally {
       setLoading(false)
-      onDone()
+      onDone(true)
     }
   }
 
@@ -316,7 +317,7 @@ function NotificationsScreen({ onDone }: { onDone: () => void }) {
           </LinearGradient>
         </Pressable>
 
-        <Pressable onPress={onDone} hitSlop={12} style={notifStyles.skipBtn}>
+        <Pressable onPress={() => onDone(false)} hitSlop={12} style={notifStyles.skipBtn}>
           <Text style={notifStyles.skipText}>Skip for now</Text>
         </Pressable>
       </View>
@@ -405,7 +406,8 @@ export default function OnboardingScreen() {
     ? LIGHT_GRADIENT
     : DARK_GRADIENT
 
-  const markDone = useCallback(async () => {
+  const markDone = useCallback(async (notificationsEnabled: boolean) => {
+    posthog.capture('onboarding_completed', { notifications_enabled: notificationsEnabled })
     await AsyncStorage.setItem(ONBOARDING_KEY, 'true')
     router.replace('/(tabs)')
   }, [])
@@ -434,7 +436,7 @@ export default function OnboardingScreen() {
         <View style={styles.card}>
           {step === 0 && <WelcomeScreen onNext={() => setStep(1)} />}
           {step === 1 && <HabitPickScreen onAutoAdvance={() => setStep(2)} />}
-          {step === 2 && <NotificationsScreen onDone={markDone} />}
+          {step === 2 && <NotificationsScreen onDone={(enabled) => markDone(enabled)} />}
         </View>
 
       </SafeAreaView>

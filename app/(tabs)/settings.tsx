@@ -10,6 +10,7 @@ import { useNotificationSettingsStore } from '@/stores/notificationSettingsStore
 import type { NotificationSettings } from '@/stores/notificationSettingsStore'
 import { cancelAllReminders, rescheduleAllReminders } from '@/utils/notifications'
 import { useHabitsStore } from '@/stores/habitsStore'
+import { posthog } from '@/analytics/posthog'
 
 type ThemeMode = 'light' | 'dark' | 'system'
 
@@ -169,6 +170,7 @@ export default function SettingsScreen() {
 
   const handleNotifChange = async (key: keyof NotificationSettings, value: boolean) => {
     await updateNotifSettings({ [key]: value })
+    posthog.capture('notifications_toggled', { setting: key, enabled: value })
     if (key === 'dailyReminders') {
       if (value) {
         await rescheduleAllReminders(habits)
@@ -200,6 +202,7 @@ export default function SettingsScreen() {
     setThemeMode(mode)
     applyTheme(mode)
     AsyncStorage.setItem(THEME_KEY, mode)
+    posthog.capture('theme_changed', { theme: mode })
   }
 
   const handleVersionTap = () => {

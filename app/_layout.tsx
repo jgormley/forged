@@ -11,6 +11,9 @@ import * as SplashScreen from 'expo-splash-screen'
 import { useMigrations } from 'drizzle-orm/expo-sqlite/migrator'
 import { db } from '@/db/client'
 import migrations from '@/db/migrations/migrations'
+import { configureRevenueCat } from '@/hooks/usePremium'
+import { posthog } from '@/analytics/posthog'
+import { PostHogProvider } from 'posthog-react-native'
 
 import { MilestoneModal } from '@/components/MilestoneModal'
 import {
@@ -37,6 +40,9 @@ Sentry.init({
   tracesSampleRate: 1,
   profilesSampleRate: 1,
 })
+
+// Configure RevenueCat once at module scope (before any component mounts).
+configureRevenueCat()
 
 // Hold the splash until fonts + DB migration are both ready.
 SplashScreen.preventAutoHideAsync()
@@ -109,20 +115,29 @@ function RootLayout() {
   }
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <StatusBar style="auto" />
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="onboarding" />
-        <Stack.Screen name="paywall" options={{ presentation: 'modal' }} />
-        <Stack.Screen name="habit/new" options={{ presentation: 'modal' }} />
-        <Stack.Screen name="habit/[id]" />
-        <Stack.Screen name="habit/edit/[id]" options={{ presentation: 'modal' }} />
-        <Stack.Screen name="legal/[slug]" options={{ presentation: 'modal' }} />
-        <Stack.Screen name="debug" options={{ presentation: 'modal' }} />
-      </Stack>
-      <MilestoneModal />
-    </GestureHandlerRootView>
+    <PostHogProvider
+      client={posthog}
+      autocapture={{
+        captureTouches: true,
+        captureScreens: false, // expo-router uses RN v7 — screen tracking must be manual
+      }}
+      options={{ captureAppLifecycleEvents: true }}
+    >
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <StatusBar style="auto" />
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="onboarding" />
+          <Stack.Screen name="paywall" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="habit/new" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="habit/[id]" />
+          <Stack.Screen name="habit/edit/[id]" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="legal/[slug]" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="debug" options={{ presentation: 'modal' }} />
+        </Stack>
+        <MilestoneModal />
+      </GestureHandlerRootView>
+    </PostHogProvider>
   )
 }
 
