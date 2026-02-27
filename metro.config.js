@@ -1,11 +1,7 @@
-const { getDefaultConfig } = require('expo/metro-config')
-const { withSentryConfig } = require('@sentry/react-native/metro')
+const { getSentryExpoConfig } = require('@sentry/react-native/metro')
 const path = require('path')
 
-const config = getDefaultConfig(__dirname)
-
-// .sql files are inlined as strings at Babel compile-time via babel-plugin-inline-import.
-// They must NOT be in sourceExts (Metro would try to parse them as JS).
+const config = getSentryExpoConfig(__dirname)
 
 // react-native-svg has "react-native": "src/index.ts" which points Metro to its
 // TypeScript sources. Metro then can't resolve the adjacent .tsx files from within
@@ -23,4 +19,4 @@ config.resolver.resolveRequest = (context, moduleName, platform) => {
     : context.resolveRequest(context, moduleName, platform)
 }
 
-module.exports = withSentryConfig(config)
+module.exports = config
