@@ -16,7 +16,8 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.forgedapp.forged",
-      "appleTeamId": "YT3798448G"
+      "appleTeamId": "YT3798448G",
+      "buildNumber": "1"
     },
     "android": {
       "package": "com.forgedapp.forged",
@@ -24,7 +25,8 @@
         "foregroundImage": "./assets/forged-logo-android-adaptive.png",
         "backgroundColor": "#4A6741"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "versionCode": 1
     },
     "plugins": [
       "expo-router",

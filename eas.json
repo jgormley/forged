@@ -23,9 +23,9 @@
   "submit": {
     "production": {
       "ios": {
-        "appleId": "",
-        "ascAppId": "",
-        "appleTeamId": ""
+        "appleId": "admin@yellowbikestudio.com",
+        "ascAppId": "6759588394",
+        "appleTeamId": "YT3798448G"
       },
       "android": {
         "serviceAccountKeyPath": "./google-service-account.json",
