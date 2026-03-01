@@ -81,7 +81,7 @@ Remaining work: paywall/freemium gate, widgets, store listing polish, final subm
 - [x] Settings notification toggles enforce the store values (guards in notifications.ts + index.tsx)
 
 ### Onboarding
-- [x] `app/onboarding.tsx` — 3 screens: Welcome, Pick a habit, Enable notifications
+- [x] `app/onboarding.tsx` — 3 screens: Welcome (with Skip), Pick a habit (with Skip), Congratulations
 - [x] `src/utils/onboardingPresets.ts` — daily-pages, sleep, workout presets
 - [x] First-launch detection via `@forged/onboardingComplete` AsyncStorage key
 - [x] Preset param support in `app/habit/new.tsx`
@@ -113,6 +113,11 @@ Remaining work: paywall/freemium gate, widgets, store listing polish, final subm
 - [x] `configureRevenueCat()` called at module scope in `_layout.tsx`
 - [x] `src/hooks/usePremium.ts` — `isPremium`, `purchase()`, `restore()`, `canAddHabit()`, CustomerInfo listener
 - [x] `EXPO_PUBLIC_RC_API_KEY_IOS` + `EXPO_PUBLIC_RC_API_KEY_ANDROID` env vars set
+
+### Bug Fixes (Beta Round 2) ✅
+- [x] Year-at-a-glance heatmap not showing current week (#10) — fixed `startDate` calculation to anchor on current week's Sunday
+- [x] New habit reminder default ON when daily reminders enabled (#11) — `reminderEnabled` now initialised from `dailyReminders` setting; default time loaded from AsyncStorage
+- [x] Onboarding restructured (#11) — Welcome + HabitPick have Skip buttons; Notifications screen replaced with Congratulations screen
 
 ### Bug Fixes (Beta Round 1) ✅
 - [x] Heatmap not reflecting today's completions — replaced `useLiveQuery` with `useFocusEffect` on Progress screen
@@ -147,9 +152,10 @@ Remaining work: paywall/freemium gate, widgets, store listing polish, final subm
 - [ ] Look and feel audit against design system (esp. onboarding flow)
 - [ ] Safe area audit, especially Android (e.g., privacy policy modal, edit habit modal)
 
-### Settings — Data Actions
-- [ ] Export data (CSV) from Settings
-- [ ] Delete all data from Settings (with confirmation Alert)
+### Settings — Data Actions ✅
+- [x] Export data (JSON backup) from Settings — shares via system share sheet
+- [x] Import backup from Settings — DocumentPicker, preview counts, confirmation Alert
+- [x] Delete all data from Settings (with confirmation Alert) — cascades to completions, resets to onboarding
 
 ### Analytics Polish
 - [ ] `ph-label` props on key interactive elements (HabitCard toggle, add buttons, onboarding options, settings rows, habit form buttons)

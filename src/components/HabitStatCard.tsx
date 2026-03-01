@@ -71,10 +71,25 @@ export function HabitStatCard({ habit, completionDates }: HabitStatCardProps) {
     [completionDates, habit.frequency, today],
   )
 
-  // Forge Rate: % of scheduled opportunities hit in the past 30 days
+  // Days since the habit was created — used to avoid penalising new habits.
+  const daysSinceCreation = useMemo(() => {
+    const habitStart = new Date(habit.createdAt)
+    habitStart.setHours(0, 0, 0, 0)
+    return Math.floor((today.getTime() - habitStart.getTime()) / (1000 * 60 * 60 * 24))
+  }, [habit.createdAt, today])
+
+  // Forge Rate: % of scheduled opportunities hit, looking back up to 30 days
+  // but no further than the habit's creation date.
   const forgeRate = useMemo(
-    () => Math.round(getCompletionRate(completionDates, habit.frequency, 30, today) * 100),
-    [completionDates, habit.frequency, today],
+    () => Math.round(
+      getCompletionRate(
+        completionDates,
+        habit.frequency,
+        Math.max(1, Math.min(30, daysSinceCreation + 1)),
+        today,
+      ) * 100,
+    ),
+    [completionDates, habit.frequency, today, daysSinceCreation],
   )
 
   const total = completionDates.length

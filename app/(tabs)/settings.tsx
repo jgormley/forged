@@ -10,8 +10,12 @@ import { useNotificationSettingsStore } from '@/stores/notificationSettingsStore
 import type { NotificationSettings } from '@/stores/notificationSettingsStore'
 import { cancelAllReminders, rescheduleAllReminders } from '@/utils/notifications'
 import { useHabitsStore } from '@/stores/habitsStore'
+import { useCompletionsStore } from '@/stores/completionsStore'
 import { usePremium, FREE_HABIT_LIMIT } from '@/hooks/usePremium'
 import { posthog } from '@/analytics/posthog'
+import { db } from '@/db/client'
+import { habits as habitsTable } from '@/db/schema'
+import { exportData, readImportFile, applyImport } from '@/utils/dataBackup'
 
 type ThemeMode = 'light' | 'dark' | 'system'
 
@@ -215,6 +219,90 @@ export default function SettingsScreen() {
     }
   }
 
+  const handleExportData = async () => {
+    try {
+      await exportData()
+    } catch (e) {
+      Alert.alert('Export Failed', String(e))
+    }
+  }
+
+  const handleImportData = async () => {
+    let preview: Awaited<ReturnType<typeof readImportFile>> | null = null
+    try {
+      preview = await readImportFile()
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e)
+      if (msg !== 'CANCELLED') Alert.alert('Import Failed', msg)
+      return
+    }
+
+    const p    = preview
+    const date = new Date(p.exportedAt).toLocaleDateString()
+    const habitWord      = p.habitCount      === 1 ? 'habit'      : 'habits'
+    const completionWord = p.completionCount === 1 ? 'completion' : 'completions'
+
+    Alert.alert(
+      'Import Backup',
+      `Backup from ${date}: ${p.habitCount} ${habitWord} and ${p.completionCount} ${completionWord}.\n\nYour current data will be replaced. This cannot be undone.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Import',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await applyImport(p)
+              await useHabitsStore.getState().load()
+              await useCompletionsStore.getState().loadAll()
+              posthog.capture('data_imported', {
+                habit_count:      p.habitCount,
+                completion_count: p.completionCount,
+              })
+              Alert.alert('Import Complete', `${p.habitCount} ${habitWord} restored successfully.`)
+            } catch {
+              Alert.alert('Import Failed', 'Something went wrong. Your data was not changed.')
+            }
+          },
+        },
+      ],
+    )
+  }
+
+  const handleDeleteAllData = () => {
+    Alert.alert(
+      'Delete All Data',
+      'This will permanently delete all your habits, streaks, and history. This cannot be undone.\n\nYour premium purchase will not be affected.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete Everything',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await db.delete(habitsTable) // cascade-deletes completions too
+              await AsyncStorage.multiRemove([
+                '@forged/onboardingComplete',
+                THEME_KEY,
+                REMINDER_TIME_KEY,
+              ])
+              await cancelAllReminders()
+              await useHabitsStore.getState().load()
+              await useCompletionsStore.getState().loadAll()
+              // Reset theme to system for the current session
+              UnistylesRuntime.setAdaptiveThemes(true)
+              setThemeMode('system')
+              posthog.capture('data_deleted')
+              router.replace('/onboarding')
+            } catch (e) {
+              Alert.alert('Error', 'Something went wrong. Please try again.')
+            }
+          },
+        },
+      ],
+    )
+  }
+
   const reminderValue = formatSettingsTime(defaultReminderTime)
 
   return (
@@ -287,8 +375,9 @@ export default function SettingsScreen() {
         </SettingsSection>
 
         <SettingsSection title="Data">
-          <SettingsRow label="Export data" />
-          <SettingsRow label="Delete all data" destructive chevron={false} />
+          <SettingsRow label="Export data" onPress={handleExportData} />
+          <SettingsRow label="Import backup" onPress={handleImportData} />
+          <SettingsRow label="Delete all data" destructive chevron={false} onPress={handleDeleteAllData} />
         </SettingsSection>
 
       </ScrollView>

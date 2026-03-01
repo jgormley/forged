@@ -3,16 +3,20 @@ import {
   KeyboardAvoidingView, Platform, Modal, Switch,
 } from 'react-native'
 import { Pressable } from '@/components/Pressable'
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { router, useLocalSearchParams } from 'expo-router'
 import { ONBOARDING_PRESETS } from '@/utils/onboardingPresets'
 import { StyleSheet } from 'react-native-unistyles'
 import { useHabitsStore } from '@/stores/habitsStore'
+import { useNotificationSettingsStore } from '@/stores/notificationSettingsStore'
 import { HabitCard } from '@/components/HabitCard'
 import { usePremium } from '@/hooks/usePremium'
 import type { FrequencyConfig } from '@/utils/streak'
 import { requestNotificationPermissions } from '@/utils/notifications'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import DateTimePicker from '@react-native-community/datetimepicker'
+
+const REMINDER_TIME_KEY = '@forged/defaultReminderTime'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants
@@ -77,6 +81,8 @@ export default function NewHabitScreen() {
   const { preset: presetKey } = useLocalSearchParams<{ preset?: string }>()
   const presetData = presetKey ? ONBOARDING_PRESETS[presetKey] : undefined
 
+  const dailyReminders = useNotificationSettingsStore((s) => s.dailyReminders)
+
   const [name,            setName]            = useState(() => presetData?.name ?? '')
   const [icon,            setIcon]            = useState(() => presetData?.icon ?? EMOJI_QUICKPICKS[0])
   const [color,           setColor]           = useState(() => presetData?.color ?? HABIT_COLORS[0])
@@ -91,9 +97,20 @@ export default function NewHabitScreen() {
   const [xPerWeek,        setXPerWeek]        = useState(3)
   const [saving,          setSaving]          = useState(false)
   const [pickerOpen,      setPickerOpen]      = useState(false)
-  const [reminderEnabled, setReminderEnabled] = useState(false)
+  const [reminderEnabled, setReminderEnabled] = useState(dailyReminders)
   const [reminderTime,    setReminderTime]    = useState(makeDefaultReminderDate)
   const [showTimePicker,  setShowTimePicker]  = useState(false)
+
+  // Load the global default reminder time saved in Settings
+  useEffect(() => {
+    AsyncStorage.getItem(REMINDER_TIME_KEY).then((value) => {
+      if (!value) return
+      const [h, m] = value.split(':').map(Number)
+      const d = new Date()
+      d.setHours(h, m, 0, 0)
+      setReminderTime(d)
+    })
+  }, [])
 
   const canSave =
     name.trim().length > 0 &&
@@ -118,6 +135,7 @@ export default function NewHabitScreen() {
     }
     setSaving(true)
     try {
+      if (reminderEnabled) await requestNotificationPermissions()
       const frequency: FrequencyConfig =
         freqType === 'daily'
           ? { type: 'daily' }

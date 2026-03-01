@@ -53,10 +53,12 @@ export function HeatmapCalendar({ data }: HeatmapCalendarProps) {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
 
-    // Start from the Sunday of the week NUM_WEEKS ago
-    const startDate = new Date(today)
-    startDate.setDate(startDate.getDate() - NUM_WEEKS * 7)
-    startDate.setDate(startDate.getDate() - startDate.getDay())
+    // Anchor to the Sunday of the current week, then go back (NUM_WEEKS - 1)
+    // weeks so the rightmost column is always the current week.
+    const currentWeekSunday = new Date(today)
+    currentWeekSunday.setDate(currentWeekSunday.getDate() - currentWeekSunday.getDay())
+    const startDate = new Date(currentWeekSunday)
+    startDate.setDate(startDate.getDate() - (NUM_WEEKS - 1) * 7)
 
     const weeks: Date[][] = []
     const monthLabels: Array<{ col: number; label: string }> = []

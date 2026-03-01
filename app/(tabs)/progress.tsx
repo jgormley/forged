@@ -139,7 +139,15 @@ export default function ProgressScreen() {
       const best  = calculateLongestStreak(dates, habit.frequency)
       if (curr > maxCurrent) maxCurrent = curr
       if (best > maxBest)    maxBest    = best
-      rateSum += getCompletionRate(dates, habit.frequency, daysIntoMonth, today)
+
+      // Don't penalise new habits: only count days since the habit was created,
+      // capped at the number of days elapsed in the current calendar month.
+      const habitStart = new Date(habit.createdAt)
+      habitStart.setHours(0, 0, 0, 0)
+      const daysSinceCreation = Math.floor((today.getTime() - habitStart.getTime()) / (1000 * 60 * 60 * 24))
+      const effectiveWindow = Math.max(1, Math.min(daysIntoMonth, daysSinceCreation + 1))
+
+      rateSum += getCompletionRate(dates, habit.frequency, effectiveWindow, today)
     }
 
     return {
@@ -183,7 +191,7 @@ export default function ProgressScreen() {
         </View>
 
         {/* ── Year at a glance */}
-        <Text style={styles.sectionTitle}>Year at a glance</Text>
+        <Text style={styles.sectionTitle}>Year At A Glance</Text>
         <View style={styles.calendarCard}>
           {rawCompletions.length === 0 ? (
             <View style={styles.emptyState}>
@@ -198,7 +206,7 @@ export default function ProgressScreen() {
         </View>
 
         {/* ── Habit breakdown */}
-        <Text style={styles.sectionTitle}>Habit breakdown</Text>
+        <Text style={styles.sectionTitle}>Habit Breakdown</Text>
         {habits.length === 0 ? (
           <View style={styles.placeholderCard}>
             <Text style={styles.placeholderIcon}>🌿</Text>

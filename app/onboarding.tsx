@@ -7,7 +7,6 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useHabitsStore } from '@/stores/habitsStore'
-import { requestNotificationPermissions } from '@/utils/notifications'
 import { posthog } from '@/analytics/posthog'
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -104,7 +103,7 @@ const medallionStyles = StyleSheet.create((theme) => ({
 // Screen 0 — Welcome
 // ─────────────────────────────────────────────────────────────────────────────
 
-function WelcomeScreen({ onNext }: { onNext: () => void }) {
+function WelcomeScreen({ onNext, onSkip }: { onNext: () => void; onSkip: () => void }) {
   const FEATURES = [
     { icon: '🔥', text: 'Build powerful streaks that keep you going' },
     { icon: '🔔', text: 'Smart reminders at the time you choose' },
@@ -122,16 +121,22 @@ function WelcomeScreen({ onNext }: { onNext: () => void }) {
         ))}
       </View>
 
-      <Pressable onPress={onNext} style={welcomeStyles.cta}>
-        <LinearGradient
-          colors={['#E8D07A', '#C8A84B', '#9B7A28']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={welcomeStyles.ctaGradient}
-        >
-          <Text style={welcomeStyles.ctaText}>Get Started →</Text>
-        </LinearGradient>
-      </Pressable>
+      <View style={welcomeStyles.actions}>
+        <Pressable onPress={onNext} style={welcomeStyles.cta}>
+          <LinearGradient
+            colors={['#E8D07A', '#C8A84B', '#9B7A28']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={welcomeStyles.ctaGradient}
+          >
+            <Text style={welcomeStyles.ctaText}>Get Started →</Text>
+          </LinearGradient>
+        </Pressable>
+
+        <Pressable onPress={onSkip} hitSlop={12} style={welcomeStyles.skipBtn}>
+          <Text style={welcomeStyles.skipText}>Skip</Text>
+        </Pressable>
+      </View>
     </View>
   )
 }
@@ -169,8 +174,11 @@ const welcomeStyles = StyleSheet.create((theme) => ({
     flex: 1,
     lineHeight: theme.font.size.md * 1.4,
   },
-  cta: {
+  actions: {
+    gap: theme.spacing.sm,
     marginTop: theme.spacing.xl,
+  },
+  cta: {
     borderRadius: theme.radius.pill,
     overflow: 'hidden',
   },
@@ -185,6 +193,15 @@ const welcomeStyles = StyleSheet.create((theme) => ({
     color: '#1C1912',
     letterSpacing: 0.3,
   },
+  skipBtn: {
+    alignItems: 'center',
+    paddingVertical: theme.spacing.sm,
+  },
+  skipText: {
+    fontFamily: theme.font.family.body,
+    fontSize: theme.font.size.md,
+    color: theme.colors.textTertiary,
+  },
 }))
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -198,7 +215,7 @@ const HABIT_OPTIONS = [
   { label: 'Custom habit',          emoji: '✏️', preset: null },
 ]
 
-function HabitPickScreen({ onAutoAdvance }: { onAutoAdvance: () => void }) {
+function HabitPickScreen({ onAutoAdvance, onSkip }: { onAutoAdvance: () => void; onSkip: () => void }) {
   const habits = useHabitsStore((s) => s.habits)
   // Only auto-advance after the user has tapped an option and navigated away.
   // Without this guard, useFocusEffect fires on dep change (habits loading in
@@ -235,6 +252,10 @@ function HabitPickScreen({ onAutoAdvance }: { onAutoAdvance: () => void }) {
           </Pressable>
         ))}
       </View>
+
+      <Pressable onPress={onSkip} hitSlop={12} style={pickStyles.skipBtn}>
+        <Text style={pickStyles.skipText}>Skip</Text>
+      </Pressable>
     </View>
   )
 }
@@ -243,6 +264,7 @@ const pickStyles = StyleSheet.create((theme) => ({
   card: {
     flex: 1,
     padding: theme.spacing.lg,
+    justifyContent: 'space-between',
   },
   optionList: {
     gap: theme.spacing.sm,
@@ -275,102 +297,6 @@ const pickStyles = StyleSheet.create((theme) => ({
     color: theme.colors.textTertiary,
     lineHeight: theme.font.size.xl,
   },
-}))
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Screen 2 — Notifications
-// ─────────────────────────────────────────────────────────────────────────────
-
-function NotificationsScreen({ onDone }: { onDone: (notificationsEnabled: boolean) => void }) {
-  const [loading, setLoading] = useState(false)
-
-  const handleEnable = async () => {
-    setLoading(true)
-    try {
-      await requestNotificationPermissions()
-    } finally {
-      setLoading(false)
-      onDone(true)
-    }
-  }
-
-  return (
-    <View style={notifStyles.card}>
-      <View style={notifStyles.descriptionBox}>
-        <Text style={notifStyles.bellIcon}>🔔</Text>
-        <Text style={notifStyles.descriptionText}>
-          Get a gentle nudge for each habit at the time you choose.
-        </Text>
-      </View>
-
-      <View style={notifStyles.actions}>
-        <Pressable onPress={handleEnable} disabled={loading} style={notifStyles.enableCta}>
-          <LinearGradient
-            colors={['#E8D07A', '#C8A84B', '#9B7A28']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={notifStyles.ctaGradient}
-          >
-            <Text style={notifStyles.enableText}>
-              {loading ? 'Enabling…' : 'Enable Notifications'}
-            </Text>
-          </LinearGradient>
-        </Pressable>
-
-        <Pressable onPress={() => onDone(false)} hitSlop={12} style={notifStyles.skipBtn}>
-          <Text style={notifStyles.skipText}>Skip for now</Text>
-        </Pressable>
-      </View>
-    </View>
-  )
-}
-
-const notifStyles = StyleSheet.create((theme) => ({
-  card: {
-    flex: 1,
-    padding: theme.spacing.lg,
-    justifyContent: 'space-between',
-  },
-  descriptionBox: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: theme.spacing.md,
-    backgroundColor: theme.colors.surfaceAlt,
-    borderRadius: theme.radius.md,
-    padding: theme.spacing.xl,
-    borderWidth: 1.5,
-    borderColor: theme.colors.borderSubtle,
-  },
-  bellIcon: {
-    fontSize: 48,
-  },
-  descriptionText: {
-    fontFamily: theme.font.family.body,
-    fontSize: theme.font.size.md,
-    color: theme.colors.text,
-    textAlign: 'center',
-    lineHeight: theme.font.size.md * 1.5,
-  },
-  actions: {
-    gap: theme.spacing.md,
-    marginTop: theme.spacing.xl,
-  },
-  enableCta: {
-    borderRadius: theme.radius.pill,
-    overflow: 'hidden',
-  },
-  ctaGradient: {
-    paddingVertical: theme.spacing.md,
-    alignItems: 'center',
-    borderRadius: theme.radius.pill,
-  },
-  enableText: {
-    fontFamily: theme.font.family.display,
-    fontSize: theme.font.size.lg,
-    color: '#1C1912',
-    letterSpacing: 0.3,
-  },
   skipBtn: {
     alignItems: 'center',
     paddingVertical: theme.spacing.sm,
@@ -383,19 +309,92 @@ const notifStyles = StyleSheet.create((theme) => ({
 }))
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Screen 2 — Congratulations
+// ─────────────────────────────────────────────────────────────────────────────
+
+function CongratulationsScreen({ onDone }: { onDone: () => void }) {
+  return (
+    <View style={congratsStyles.card}>
+      <View style={congratsStyles.messageBox}>
+        <Text style={congratsStyles.celebrationIcon}>🏆</Text>
+        <Text style={congratsStyles.messageText}>
+          You are one step closer to a better you.
+        </Text>
+      </View>
+
+      <Pressable onPress={onDone} style={congratsStyles.cta}>
+        <LinearGradient
+          colors={['#E8D07A', '#C8A84B', '#9B7A28']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={congratsStyles.ctaGradient}
+        >
+          <Text style={congratsStyles.ctaText}>Start Forging →</Text>
+        </LinearGradient>
+      </Pressable>
+    </View>
+  )
+}
+
+const congratsStyles = StyleSheet.create((theme) => ({
+  card: {
+    flex: 1,
+    padding: theme.spacing.lg,
+    justifyContent: 'space-between',
+  },
+  messageBox: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: theme.spacing.md,
+    backgroundColor: theme.colors.surfaceAlt,
+    borderRadius: theme.radius.md,
+    padding: theme.spacing.xl,
+    borderWidth: 1.5,
+    borderColor: theme.colors.borderSubtle,
+  },
+  celebrationIcon: {
+    fontSize: 56,
+  },
+  messageText: {
+    fontFamily: theme.font.family.italic,
+    fontSize: theme.font.size.lg,
+    color: theme.colors.text,
+    textAlign: 'center',
+    lineHeight: theme.font.size.lg * 1.5,
+  },
+  cta: {
+    marginTop: theme.spacing.xl,
+    borderRadius: theme.radius.pill,
+    overflow: 'hidden',
+  },
+  ctaGradient: {
+    paddingVertical: theme.spacing.md,
+    alignItems: 'center',
+    borderRadius: theme.radius.pill,
+  },
+  ctaText: {
+    fontFamily: theme.font.family.display,
+    fontSize: theme.font.size.lg,
+    color: '#1C1912',
+    letterSpacing: 0.3,
+  },
+}))
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Main screen — shared shell
 // ─────────────────────────────────────────────────────────────────────────────
 
 const HEADINGS = [
   'Forge your best self.',
   'What do you want to forge?',
-  'Never miss a day.',
+  'Congratulations!',
 ]
 
 const SUBHEADINGS = [
   'Daily habits, built one day at a time.',
   'Start with one. Add more anytime.',
-  "We'll remind you when it's time to build.",
+  'You are one step closer to a better you.',
 ]
 
 export default function OnboardingScreen() {
@@ -406,8 +405,8 @@ export default function OnboardingScreen() {
     ? LIGHT_GRADIENT
     : DARK_GRADIENT
 
-  const markDone = useCallback(async (notificationsEnabled: boolean) => {
-    posthog.capture('onboarding_completed', { notifications_enabled: notificationsEnabled })
+  const markDone = useCallback(async () => {
+    posthog.capture('onboarding_completed')
     await AsyncStorage.setItem(ONBOARDING_KEY, 'true')
     router.replace('/(tabs)')
   }, [])
@@ -434,9 +433,9 @@ export default function OnboardingScreen() {
 
         {/* Card */}
         <View style={styles.card}>
-          {step === 0 && <WelcomeScreen onNext={() => setStep(1)} />}
-          {step === 1 && <HabitPickScreen onAutoAdvance={() => setStep(2)} />}
-          {step === 2 && <NotificationsScreen onDone={(enabled) => markDone(enabled)} />}
+          {step === 0 && <WelcomeScreen onNext={() => setStep(1)} onSkip={markDone} />}
+          {step === 1 && <HabitPickScreen onAutoAdvance={() => setStep(2)} onSkip={() => setStep(2)} />}
+          {step === 2 && <CongratulationsScreen onDone={markDone} />}
         </View>
 
       </SafeAreaView>
