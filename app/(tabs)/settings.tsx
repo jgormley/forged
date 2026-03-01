@@ -38,12 +38,12 @@ function applyTheme(mode: ThemeMode) {
 }
 
 function SettingsRow({
-  label, value, chevron = true, destructive = false, onPress,
+  label, value, chevron = true, destructive = false, onPress, phLabel,
 }: {
-  label: string; value?: string; chevron?: boolean; destructive?: boolean; onPress?: () => void
+  label: string; value?: string; chevron?: boolean; destructive?: boolean; onPress?: () => void; phLabel?: string
 }) {
   return (
-    <Pressable style={styles.row} onPress={onPress}>
+    <Pressable style={styles.row} onPress={onPress} ph-label={phLabel}>
       <Text style={[styles.rowLabel, destructive && styles.rowLabelDestructive]}>{label}</Text>
       <View style={styles.rowRight}>
         {value ? <Text style={styles.rowValue}>{value}</Text> : null}
@@ -329,6 +329,7 @@ export default function SettingsScreen() {
         <SettingsSection title="Habits">
           <SettingsRow
             label="Manage habits"
+            phLabel="settings_manage_habits"
             onPress={() => Alert.alert(
               'Managing Habits',
               'To edit or delete a habit, long-press it on the Today or Progress page.',
@@ -338,6 +339,7 @@ export default function SettingsScreen() {
           <SettingsRow
             label="Default reminder time"
             value={reminderValue}
+            phLabel="settings_reminder_time"
             onPress={() => setShowTimePicker(true)}
           />
         </SettingsSection>
@@ -368,16 +370,16 @@ export default function SettingsScreen() {
         </SettingsSection>
 
         <SettingsSection title="About">
-          <SettingsRow label="Rate Forged" />
-          <SettingsRow label="Privacy Policy" onPress={() => router.push('/legal/privacy')} />
-          <SettingsRow label="Terms of Service" onPress={() => router.push('/legal/terms')} />
-          <SettingsRow label="Version" value="1.0.0" chevron={false} onPress={handleVersionTap} />
+          <SettingsRow label="Rate Forged" phLabel="settings_rate_app" />
+          <SettingsRow label="Privacy Policy" phLabel="settings_privacy_policy" onPress={() => router.push('/legal/privacy')} />
+          <SettingsRow label="Terms of Service" phLabel="settings_terms" onPress={() => router.push('/legal/terms')} />
+          <SettingsRow label="Version" value="1.0.0" chevron={false} phLabel="settings_version" onPress={handleVersionTap} />
         </SettingsSection>
 
         <SettingsSection title="Data">
-          <SettingsRow label="Export data" onPress={handleExportData} />
-          <SettingsRow label="Import backup" onPress={handleImportData} />
-          <SettingsRow label="Delete all data" destructive chevron={false} onPress={handleDeleteAllData} />
+          <SettingsRow label="Export data" phLabel="settings_export_data" onPress={handleExportData} />
+          <SettingsRow label="Import backup" phLabel="settings_import_backup" onPress={handleImportData} />
+          <SettingsRow label="Delete all data" destructive chevron={false} phLabel="settings_delete_all_data" onPress={handleDeleteAllData} />
         </SettingsSection>
 
       </ScrollView>
