@@ -5,4 +5,7 @@ import * as schema from './schema'
 // enableChangeListener lets Drizzle's live queries react to DB writes
 const sqlite = openDatabaseSync('forged.db', { enableChangeListener: true })
 
+// SQLite doesn't enforce foreign keys by default — this enables ON DELETE CASCADE
+sqlite.execSync('PRAGMA foreign_keys = ON;')
+
 export const db = drizzle(sqlite, { schema })

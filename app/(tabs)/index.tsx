@@ -10,6 +10,7 @@ import { useCompletionsStore, toDateKey } from '@/stores/completionsStore'
 import { useUIStore, getMilestoneTier } from '@/stores/uiStore'
 import { useNotificationSettingsStore } from '@/stores/notificationSettingsStore'
 import { calculateCurrentStreak } from '@/utils/streak'
+import { usePremium } from '@/hooks/usePremium'
 import { posthog } from '@/analytics/posthog'
 import type { Completion } from '@/db/schema'
 
@@ -58,6 +59,7 @@ export default function TodayScreen() {
   const toggle           = useCompletionsStore((s) => s.toggle)
   const showMilestone           = useUIStore((s) => s.showMilestone)
   const milestoneCelebrations   = useNotificationSettingsStore((s) => s.milestoneCelebrations)
+  const { canAddHabit }  = usePremium()
 
   useEffect(() => {
     loadHabits()
@@ -81,9 +83,13 @@ export default function TodayScreen() {
   const completedCount = habits.filter((h) => completedTodayIds.has(h.id)).length
   const pct            = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0
 
-  const debugMilestone = useCallback(() => {
-    showMilestone({ habitId: 'debug', habitName: 'Morning Run', habitIcon: '🏃', streak: 7, tier: 7 })
-  }, [showMilestone])
+  const handleAddHabit = useCallback(() => {
+    if (canAddHabit(habits.length)) {
+      router.push('/habit/new')
+    } else {
+      router.push('/paywall')
+    }
+  }, [canAddHabit, habits.length])
 
   const handleToggle = useCallback(async (habitId: string, currentStreak: number) => {
     const result = await toggle(habitId)
@@ -116,12 +122,7 @@ export default function TodayScreen() {
 
       {/* ── Hero ── */}
       <ScreenHeader style={styles.hero}>
-        <View style={styles.heroTopRow}>
-          <Text style={styles.heroDate}>{TODAY}</Text>
-          <Pressable onPress={debugMilestone}>
-            <Text style={styles.debugBtn}>show modal</Text>
-          </Pressable>
-        </View>
+        <Text style={styles.heroDate}>{TODAY}</Text>
         <Text style={styles.heroGreeting}>{greeting()}</Text>
 
         <View style={styles.progressCard}>
@@ -157,7 +158,7 @@ export default function TodayScreen() {
             <Text style={styles.emptyBody}>
               Add your first habit to begin building the life you want, one day at a time.
             </Text>
-            <Pressable style={styles.addButton} onPress={() => router.push('/habit/new')}>
+            <Pressable style={styles.addButton} onPress={handleAddHabit}>
               <Text style={styles.addButtonText}>Forge Your First Habit</Text>
             </Pressable>
           </View>
@@ -175,7 +176,7 @@ export default function TodayScreen() {
               />
             ))}
 
-            <Pressable style={styles.addButton} onPress={() => router.push('/habit/new')}>
+            <Pressable style={styles.addButton} onPress={handleAddHabit}>
               <Text style={styles.addButtonText}>Forge a New Habit</Text>
             </Pressable>
           </>
@@ -199,24 +200,12 @@ const styles = StyleSheet.create((theme) => ({
   hero: {
     backgroundColor: theme.colors.success,
   },
-  heroTopRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 2,
-  },
   heroDate: {
     fontFamily: theme.font.family.body,
     fontSize: theme.font.size.xs,
     color: 'rgba(249,245,236,0.65)',
     letterSpacing: 0.8,
     textTransform: 'uppercase',
-  },
-  debugBtn: {
-    fontFamily: theme.font.family.body,
-    fontSize: theme.font.size.xs,
-    color: 'rgba(249,245,236,0.65)',
-    letterSpacing: 0.8,
   },
   heroGreeting: {
     fontFamily: theme.font.family.display,

@@ -1,14 +1,15 @@
 import { View, Text, ScrollView } from 'react-native'
-import { useMemo } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import { StyleSheet } from 'react-native-unistyles'
-import { useLiveQuery } from 'drizzle-orm/expo-sqlite'
+import { router, useFocusEffect } from 'expo-router'
 import { ScreenHeader } from '@/components/ScreenHeader'
 import { HeatmapCalendar } from '@/components/HeatmapCalendar'
 import { HabitStatCard } from '@/components/HabitStatCard'
+import { Pressable } from '@/components/Pressable'
 import { useHabitsStore } from '@/stores/habitsStore'
 import { toDateKey } from '@/stores/completionsStore'
 import { db } from '@/db/client'
-import { completions } from '@/db/schema'
+import { completions, type Completion } from '@/db/schema'
 import {
   calculateCurrentStreak,
   calculateLongestStreak,
@@ -75,8 +76,14 @@ function AchievementCard({ emoji, title, description, earned, requirement }: Ach
 export default function ProgressScreen() {
   const habits = useHabitsStore((s) => s.habits)
 
-  // Load ALL completions (no date filter) so streak + total calculations are all-time accurate
-  const { data: rawCompletions = [] } = useLiveQuery(db.select().from(completions))
+  // Reload all completions whenever the Progress tab comes into focus so the
+  // heatmap and stats always reflect changes made on the Today tab.
+  const [rawCompletions, setRawCompletions] = useState<Completion[]>([])
+  useFocusEffect(
+    useCallback(() => {
+      db.select().from(completions).then(setRawCompletions)
+    }, []),
+  )
 
   const today = useMemo(() => {
     const d = new Date()
@@ -201,11 +208,15 @@ export default function ProgressScreen() {
           </View>
         ) : (
           habits.map((habit) => (
-            <HabitStatCard
+            <Pressable
               key={habit.id}
-              habit={habit}
-              completionDates={completionsByHabit.get(habit.id) ?? []}
-            />
+              onLongPress={() => router.push(`/habit/edit/${habit.id}`)}
+            >
+              <HabitStatCard
+                habit={habit}
+                completionDates={completionsByHabit.get(habit.id) ?? []}
+              />
+            </Pressable>
           ))
         )}
 

@@ -5,8 +5,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { UnistylesRuntime } from 'react-native-unistyles'
 import { useNotificationSettingsStore } from '@/stores/notificationSettingsStore'
 import { StatusBar } from 'expo-status-bar'
-import { View, ActivityIndicator, Text } from 'react-native'
+import { View, ActivityIndicator, Text, AppState } from 'react-native'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
+import * as Notifications from 'expo-notifications'
 import * as SplashScreen from 'expo-splash-screen'
 import { useMigrations } from 'drizzle-orm/expo-sqlite/migrator'
 import { db } from '@/db/client'
@@ -94,6 +95,35 @@ function RootLayout() {
     AsyncStorage.getItem('@forged/onboardingComplete').then((value) => {
       if (!value) router.replace('/onboarding')
     })
+  }, [ready])
+
+  // Clear badge count and dismiss notifications from the tray whenever the app
+  // comes to the foreground (issue #7).
+  useEffect(() => {
+    const clearNotifications = () => {
+      Notifications.dismissAllNotificationsAsync()
+      Notifications.setBadgeCountAsync(0)
+    }
+    clearNotifications()
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') clearNotifications()
+    })
+    return () => sub.remove()
+  }, [])
+
+  // Navigate to the Today tab whenever the user opens the app by tapping a
+  // notification (issue #8).
+  useEffect(() => {
+    if (!ready) return
+    // Handle cold start — app was launched via a notification tap
+    Notifications.getLastNotificationResponseAsync().then((response) => {
+      if (response) router.replace('/(tabs)')
+    })
+    // Handle warm/background tap
+    const sub = Notifications.addNotificationResponseReceivedListener(() => {
+      router.replace('/(tabs)')
+    })
+    return () => sub.remove()
   }, [ready])
 
   if (dbError) {

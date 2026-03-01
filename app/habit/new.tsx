@@ -9,6 +9,7 @@ import { ONBOARDING_PRESETS } from '@/utils/onboardingPresets'
 import { StyleSheet } from 'react-native-unistyles'
 import { useHabitsStore } from '@/stores/habitsStore'
 import { HabitCard } from '@/components/HabitCard'
+import { usePremium } from '@/hooks/usePremium'
 import type { FrequencyConfig } from '@/utils/streak'
 import { requestNotificationPermissions } from '@/utils/notifications'
 import DateTimePicker from '@react-native-community/datetimepicker'
@@ -71,6 +72,8 @@ function toHHMM(d: Date): string {
 
 export default function NewHabitScreen() {
   const add = useHabitsStore((s) => s.add)
+  const habits = useHabitsStore((s) => s.habits)
+  const { canAddHabit } = usePremium()
   const { preset: presetKey } = useLocalSearchParams<{ preset?: string }>()
   const presetData = presetKey ? ONBOARDING_PRESETS[presetKey] : undefined
 
@@ -109,6 +112,10 @@ export default function NewHabitScreen() {
 
   const handleSave = useCallback(async () => {
     if (!canSave || saving) return
+    if (!canAddHabit(habits.length)) {
+      router.replace('/paywall')
+      return
+    }
     setSaving(true)
     try {
       const frequency: FrequencyConfig =
@@ -121,7 +128,7 @@ export default function NewHabitScreen() {
         name: name.trim(),
         icon,
         color,
-        category: presetData?.category ?? 'custom',
+        category: (presetData?.category ?? 'custom') as import('@/db/schema').HabitCategory,
         frequency,
         reminderTime: reminderEnabled ? toHHMM(reminderTime) : null,
       })
@@ -129,7 +136,7 @@ export default function NewHabitScreen() {
     } finally {
       setSaving(false)
     }
-  }, [canSave, saving, freqType, selectedDays, xPerWeek, name, icon, color, add, reminderEnabled, reminderTime])
+  }, [canSave, saving, canAddHabit, habits.length, freqType, selectedDays, xPerWeek, name, icon, color, add, reminderEnabled, reminderTime])
 
   // isCompleted=true so the color fill is visible in the preview
   const preview = {

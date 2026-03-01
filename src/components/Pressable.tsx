@@ -11,9 +11,9 @@ import type { PressableProps } from 'react-native'
 export function Pressable({ style, ...props }: PressableProps) {
   return (
     <RNPressable
-      style={({ pressed }) => {
-        const base = typeof style === 'function' ? style({ pressed }) : style
-        return pressed ? [base, PRESSED] : base
+      style={(state) => {
+        const base = typeof style === 'function' ? style(state) : style
+        return state.pressed ? [base, PRESSED] : base
       }}
       {...props}
     />

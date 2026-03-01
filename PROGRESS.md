@@ -5,16 +5,17 @@
 
 ---
 
-## Current Status: Phase 3 in progress
+## Current Status: Phase 3 in progress — in beta testing
 
-Last commit: `4e5c3e9` — "Add RevenueCat and PostHog integrations (Phase 3)"
+Both iOS (TestFlight) and Android (Google Play internal testing) builds are live and working.
+Remaining work: paywall/freemium gate, widgets, store listing polish, final submission.
 
 ---
 
 ## ✅ Phase 1 — Core Loop (COMPLETE)
 
 ### Infrastructure
-- [x] Expo SDK 55 (preview.12), React Native 0.79, React 19, New Architecture
+- [x] Expo SDK 55 stable (upgraded from preview.12), React Native 0.79, React 19, New Architecture
 - [x] CNG setup — `ios/` and `android/` gitignored, rebuilt with `npx expo prebuild --clean`
 - [x] expo-router v4 file-based routing
 - [x] `babel.config.js` — `react-native-worklets/plugin` (Reanimated 4), Unistyles `root: 'src'`
@@ -93,19 +94,19 @@ Last commit: `4e5c3e9` — "Add RevenueCat and PostHog integrations (Phase 3)"
 - [x] 5-tap version easter egg → debug screen
 
 ### Crash Reporting
-- [x] `@sentry/react-native` — DSN from `EXPO_PUBLIC_SENTRY_DSN`, `debug: true`, full sample rates (intentional for now)
+- [x] `@sentry/react-native` — DSN from `EXPO_PUBLIC_SENTRY_DSN`, full sample rates (intentional for now)
 - [x] `Sentry.wrap(RootLayout)` in `_layout.tsx`
 
 ---
 
-## 🔲 Phase 3 — Monetization & Widgets (in progress)
+## 🔲 Phase 3 — Monetization (in progress)
 
 ### Analytics — PostHog ✅
-- [x] `src/analytics/posthog.ts` — singleton, `disabled: !key`, `debug: __DEV__`
+- [x] `src/analytics/posthog.ts` — singleton, `disabled: !key`, `posthog.debug()` in DEV
 - [x] `PostHogProvider` wrapping app — autocapture enabled (touches + app lifecycle), screen tracking disabled (RN v7 incompatibility)
 - [x] Events: `habit_created`, `habit_deleted`, `habit_completed`, `streak_milestone`, `onboarding_completed`, `theme_changed`, `notifications_toggled`
-- [ ] `ph-label` props on key interactive elements (autocapture labels — see task below)
-- [ ] Remaining events: `paywall_viewed`, `purchase_completed`, `purchase_cancelled`
+- [ ] `ph-label` props on key interactive elements (autocapture labels)
+- [x] Remaining events: `paywall_viewed`, `purchase_completed`, `purchase_cancelled`
 
 ### RevenueCat ✅
 - [x] `react-native-purchases` installed and configured
@@ -113,23 +114,27 @@ Last commit: `4e5c3e9` — "Add RevenueCat and PostHog integrations (Phase 3)"
 - [x] `src/hooks/usePremium.ts` — `isPremium`, `purchase()`, `restore()`, `canAddHabit()`, CustomerInfo listener
 - [x] `EXPO_PUBLIC_RC_API_KEY_IOS` + `EXPO_PUBLIC_RC_API_KEY_ANDROID` env vars set
 
-### Freemium Gate 🔲
-- [ ] Enforce 3-habit limit in `app/habit/new.tsx` — check `canAddHabit()` before saving
-- [ ] Trigger paywall modal when free limit is hit
-- [ ] Show "Forged Free — Up to 3 habits" vs "Forged Premium" in settings premium card
+### Bug Fixes (Beta Round 1) ✅
+- [x] Heatmap not reflecting today's completions — replaced `useLiveQuery` with `useFocusEffect` on Progress screen
+- [x] Deleted habit data persisting in heatmap — enabled `PRAGMA foreign_keys = ON` so cascade delete works
+- [x] Low heatmap contrast (L1/L2) — bumped opacity levels in both themes
+- [x] Long-press to edit on Progress screen — HabitStatCard wrapped in Pressable; Settings alert updated
+- [x] Debug "show modal" button removed from Today screen
+- [x] Badge count + notifications not cleared on app open — `AppState` listener calls `dismissAllNotifications` + `setBadgeCountAsync(0)`
+- [x] Notification tap didn't navigate to Today tab — added `addNotificationResponseReceivedListener` + cold-start handler
+- [x] Expo SDK 55 stable upgrade — all packages updated, `app.json` schema errors resolved, TypeScript errors from new package versions fixed
 
-### Paywall Screen 🔲
-- [ ] `app/paywall.tsx` — full UI (currently a stub): widget screenshot hero, $3.99 CTA, restore button
-- [ ] Wire `purchase()` and `restore()` from `usePremium`
-- [ ] PostHog events: `paywall_viewed`, `purchase_completed`, `purchase_cancelled`
+### Freemium Gate ✅
+- [x] Enforce 2-habit limit in `app/habit/new.tsx` — defensive check in `handleSave()` before `add()`
+- [x] Gate "Forge a New Habit" / "Forge Your First Habit" buttons in `app/(tabs)/index.tsx` — routes to `/paywall` when limit hit
+- [x] Show "Forged Free — Up to 2 habits" vs "Forged Premium — All features unlocked" in settings premium card
+- [x] `FREE_HABIT_LIMIT = 2` in `src/hooks/usePremium.ts`
 
-### iOS Widgets 🔲
-- [ ] Investigate `expo-widgets` current state with SDK 55 preview (alpha API — may have changed)
-- [ ] `widgets/SingleHabitWidget.tsx` — small widget: habit icon, streak, 7-day dots
-- [ ] `widgets/MultiHabitWidget.tsx` — medium widget: 3 habits, completion status
-- [ ] `src/utils/widgetSync.ts` — push snapshot to App Group on every check-off
-- [ ] Add `expo-widgets` plugin to `app.json`
-- [ ] Widget data is premium-only gate
+### Paywall Screen ✅
+- [x] `app/paywall.tsx` — full UI: medallion, value props card, $3.99 price, purchase CTA, restore button, footer links
+- [x] Wire `purchase()` and `restore()` from `usePremium`
+- [x] Auto-dismiss when `isPremium` becomes true
+- [x] PostHog events: `paywall_viewed`, `purchase_completed`, `purchase_cancelled`
 
 ---
 
@@ -157,26 +162,45 @@ Last commit: `4e5c3e9` — "Add RevenueCat and PostHog integrations (Phase 3)"
 - **Privacy Policy URL:** `https://jgormley.github.io/forged/privacy/`
 - **Terms of Service URL:** `https://jgormley.github.io/forged/terms/`
 
-### EAS Build & Store Setup
-- [ ] Install EAS CLI: `npm install -g eas-cli` + `eas login`
-- [ ] Add `buildNumber` (iOS) and `versionCode` (Android) to `app.json`
-- [ ] Add `google-service-account.json` to `.gitignore`
-- [ ] **iOS:** Create app in App Store Connect (bundle ID `com.forgedapp.forged`)
-- [ ] **iOS:** Fill in `eas.json` submit config — `appleId`, `ascAppId` (numeric App ID from ASC)
-- [ ] **iOS:** Add Privacy Policy URL in App Store Connect: `https://jgormley.github.io/forged/privacy/`
-- [ ] **Android:** Create app in Google Play Console (package `com.forgedapp.forged`)
-- [ ] **Android:** Create Google service account → download JSON key → save as `google-service-account.json`
-- [ ] **Android:** Grant service account "Release Manager" role in Play Console
-- [ ] Run build: `eas build --platform all --profile production`
-- [ ] Submit: `eas submit --platform all --profile production`
-- [ ] Add internal testers in TestFlight + Play Console internal testing track
+### EAS Build & Store Setup ✅
+- [x] EAS CLI installed, `eas login`, project linked (`projectId` in `app.json`)
+- [x] `buildNumber` (iOS) and `versionCode` (Android) in `app.json`; `appVersionSource: remote` in `eas.json`
+- [x] `google-service-account.json` created (gitignored)
+- [x] **iOS:** App created in App Store Connect (bundle ID `com.forgedapp.forged`)
+- [x] **iOS:** `eas.json` submit config complete — `appleId`, `ascAppId`, `appleTeamId`
+- [x] **iOS:** APNs key generated via EAS; push notifications configured
+- [x] **Android:** App created in Google Play Console (package `com.forgedapp.forged`)
+- [x] **Android:** Google service account created; "Release Manager" + financial read access granted
+- [x] **EAS env vars** set for `production` and `preview` environments:
+  - `EXPO_PUBLIC_SENTRY_DSN`, `EXPO_PUBLIC_POSTHOG_API_KEY` (same value both envs)
+  - `EXPO_PUBLIC_RC_API_KEY_IOS`, `EXPO_PUBLIC_RC_API_KEY_ANDROID` (different per env)
+- [x] `.npmrc` — `legacy-peer-deps=true` so EAS `npm ci` matches local installs
+- [x] `eas.json` — Android `releaseStatus: draft` (required until Play Store listing is complete)
+- [x] Production builds running and submitted to both stores
 
-### Submission
+### Beta Testing ✅
+- [x] **iOS:** App live in TestFlight internal testing; internal testers added
+- [x] **Android:** App live in Google Play internal testing track
+
+### Store Listing & Final Submission 🔲
 - [ ] App Store screenshots (6.7", 6.1", iPad 12.9")
 - [ ] Google Play feature graphic + screenshots
 - [ ] App Store metadata (description, keywords, categories) — draft in `forged-project-context.md` Section 12
-- [ ] TestFlight internal testing → external beta
-- [ ] Submit iOS + Android
+- [x] Privacy Policy URL added in App Store Connect: `https://jgormley.github.io/forged/privacy/`
+- [ ] Complete Play Store listing (required before removing `releaseStatus: draft` from `eas.json`)
+- [ ] Final submission: iOS + Android
+- [ ] Create promo codes for friends and family 
+---
+
+## 🔲 Phase 5 — Widgets
+
+### iOS Widgets 🔲
+- [ ] Investigate `expo-widgets` current state with SDK 55 stable (alpha API — may have changed)
+- [ ] `widgets/SingleHabitWidget.tsx` — small widget: habit icon, streak, 7-day dots
+- [ ] `widgets/MultiHabitWidget.tsx` — medium widget: 3 habits, completion status
+- [ ] `src/utils/widgetSync.ts` — push snapshot to App Group on every check-off
+- [ ] Add `expo-widgets` plugin to `app.json`
+- [ ] Widget data is premium-only gate
 
 ---
 

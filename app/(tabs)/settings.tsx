@@ -10,6 +10,7 @@ import { useNotificationSettingsStore } from '@/stores/notificationSettingsStore
 import type { NotificationSettings } from '@/stores/notificationSettingsStore'
 import { cancelAllReminders, rescheduleAllReminders } from '@/utils/notifications'
 import { useHabitsStore } from '@/stores/habitsStore'
+import { usePremium, FREE_HABIT_LIMIT } from '@/hooks/usePremium'
 import { posthog } from '@/analytics/posthog'
 
 type ThemeMode = 'light' | 'dark' | 'system'
@@ -163,6 +164,7 @@ export default function SettingsScreen() {
   const versionTaps = useRef(0)
 
   const habits           = useHabitsStore((s) => s.habits)
+  const { isPremium }    = usePremium()
   const dailyReminders        = useNotificationSettingsStore((s) => s.dailyReminders)
   const streakAlerts          = useNotificationSettingsStore((s) => s.streakAlerts)
   const milestoneCelebrations = useNotificationSettingsStore((s) => s.milestoneCelebrations)
@@ -224,12 +226,16 @@ export default function SettingsScreen() {
       <ScrollView style={styles.body} contentContainerStyle={styles.bodyContent} showsVerticalScrollIndicator={false}>
         <View style={styles.premiumCard}>
           <View>
-            <Text style={styles.premiumLabel}>Forged Free</Text>
-            <Text style={styles.premiumSub}>Up to 3 habits</Text>
+            <Text style={styles.premiumLabel}>{isPremium ? 'Forged Premium' : 'Forged Free'}</Text>
+            <Text style={[styles.premiumSub, isPremium && styles.premiumSubUnlocked]}>
+              {isPremium ? 'All features unlocked' : `Up to ${FREE_HABIT_LIMIT} habits`}
+            </Text>
           </View>
-          <Pressable style={styles.premiumCta}>
-            <Text style={styles.premiumCtaText}>Unlock All ⚒️</Text>
-          </Pressable>
+          {!isPremium && (
+            <Pressable style={styles.premiumCta} onPress={() => router.push('/paywall')}>
+              <Text style={styles.premiumCtaText}>Unlock All ⚒️</Text>
+            </Pressable>
+          )}
         </View>
 
         <SettingsSection title="Habits">
@@ -237,7 +243,7 @@ export default function SettingsScreen() {
             label="Manage habits"
             onPress={() => Alert.alert(
               'Managing Habits',
-              'To edit or delete a habit, long-press it on the Today page.',
+              'To edit or delete a habit, long-press it on the Today or Progress page.',
               [{ text: 'Got it' }],
             )}
           />
@@ -363,6 +369,9 @@ const styles = StyleSheet.create((theme) => ({
     fontSize: theme.font.size.sm,
     color: theme.colors.textTertiary,
     marginTop: 2,
+  },
+  premiumSubUnlocked: {
+    color: theme.colors.successLight,
   },
   premiumCta: {
     backgroundColor: theme.colors.accent,

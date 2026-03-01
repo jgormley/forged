@@ -11,6 +11,8 @@ import { completions } from '@/db/schema'
 import type { NewCompletion } from '@/db/schema'
 import { randomUUID } from 'expo-crypto'
 import { posthog } from '@/analytics/posthog'
+import Purchases from 'react-native-purchases'
+import { setDevForceFree, getDevForceFree } from '@/hooks/usePremium'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Mock data
@@ -20,8 +22,10 @@ import { posthog } from '@/analytics/posthog'
 // realistic-looking streaks: best=23d, current=5d, total=79/90, forge≈88%
 const MOCK_SKIP_DAYS = new Set([5, 6, 21, 22, 23, 47, 48, 68, 69, 84, 85])
 
+type AddFn = ReturnType<typeof useHabitsStore.getState>['add']
+
 async function seedHabitWithHistory(
-  add: ReturnType<typeof useHabitsStore>['add'],
+  add: AddFn,
 ): Promise<void> {
   const habit = await add({
     name: 'Morning Run',
@@ -92,6 +96,9 @@ export default function DebugScreen() {
   const [sentryState, setSentryState] = useState<ActionState>('idle')
   const [posthogState, setPosthogState] = useState<ActionState>('idle')
   const [onboardingResetState, setOnboardingResetState] = useState<ActionState>('idle')
+  const [rcStatusState, setRcStatusState] = useState<ActionState>('idle')
+  const [rcOfferingsState, setRcOfferingsState] = useState<ActionState>('idle')
+  const [rcForceFreeActive, setRcForceFreeActive] = useState(() => getDevForceFree())
 
   const handleAddMockHabit = async () => {
     setMockState('loading')
@@ -183,6 +190,94 @@ export default function DebugScreen() {
             Alert.alert('Sent', 'Test error sent to Sentry.')
           }}
           state={sentryState}
+        />
+
+        <Text style={styles.sectionLabel}>RevenueCat</Text>
+
+        <DebugButton
+          label="Check RC Entitlements"
+          description="Fetches current CustomerInfo and shows active entitlements. Use this after a purchase to see what RC returned."
+          onPress={async () => {
+            setRcStatusState('loading')
+            try {
+              const info = await Purchases.getCustomerInfo()
+              const keys = Object.keys(info.entitlements.active)
+              console.log('[RC debug] activeEntitlements:', keys)
+              console.log('[RC debug] allEntitlements:', JSON.stringify(info.entitlements.all, null, 2))
+              Alert.alert(
+                'RC Entitlements',
+                keys.length > 0
+                  ? `Active:\n${keys.join('\n')}`
+                  : 'No active entitlements.\n\nExpected: forged_premium_lifetime\n\nCheck RC dashboard → Entitlements.',
+              )
+              setRcStatusState('done')
+            } catch (e) {
+              console.warn('[RC debug] getCustomerInfo error:', e)
+              Alert.alert('RC Error', String(e))
+              setRcStatusState('error')
+            }
+          }}
+          state={rcStatusState}
+        />
+
+        <DebugButton
+          label="Check RC Offerings"
+          description="Fetches current offerings from RevenueCat. Verifies that a product is configured and available to purchase."
+          onPress={async () => {
+            setRcOfferingsState('loading')
+            try {
+              const offerings = await Purchases.getOfferings()
+              const current = offerings.current
+              console.log('[RC debug] current offering:', current?.identifier ?? 'null')
+              console.log('[RC debug] packages:', current?.availablePackages.map(p => `${p.identifier} (${p.packageType})`))
+              Alert.alert(
+                'RC Offerings',
+                current
+                  ? `Offering: ${current.identifier}\nPackages: ${current.availablePackages.map(p => p.identifier).join(', ')}`
+                  : 'No current offering found.\n\nGo to RevenueCat dashboard → Offerings and set a "current" offering.',
+              )
+              setRcOfferingsState('done')
+            } catch (e) {
+              console.warn('[RC debug] getOfferings error:', e)
+              Alert.alert('RC Error', String(e))
+              setRcOfferingsState('error')
+            }
+          }}
+          state={rcOfferingsState}
+        />
+
+        <DebugButton
+          label={rcForceFreeActive ? 'Free Tier Override: ON — tap to disable' : 'Force Free Tier (dev override)'}
+          description={rcForceFreeActive
+            ? 'The app is currently treating you as a free user regardless of your RC entitlement. Tap to restore normal behaviour.'
+            : 'Instantly puts the app in free tier without touching RevenueCat. Resets on next Metro reload. Use this to test the paywall gate.'}
+          onPress={() => {
+            const next = !rcForceFreeActive
+            setDevForceFree(next)
+            setRcForceFreeActive(next)
+          }}
+          state="idle"
+        />
+
+        <DebugButton
+          label="Show RC App User ID"
+          description="Shows your current RC anonymous user ID. Copy it and paste into RC Dashboard → Customers to delete the customer and fully reset purchase history."
+          onPress={async () => {
+            try {
+              const userId = await Purchases.getAppUserID()
+              Alert.alert('RC App User ID', userId, [
+                { text: 'Copy', onPress: () => {
+                  // expo-clipboard is not installed; log to Metro as fallback
+                  console.log('[RC debug] appUserID:', userId)
+                  Alert.alert('Copied to Metro log', 'The ID has been printed to the Metro console.')
+                }},
+                { text: 'OK' },
+              ])
+            } catch (e) {
+              Alert.alert('Error', String(e))
+            }
+          }}
+          state="idle"
         />
 
       </ScrollView>

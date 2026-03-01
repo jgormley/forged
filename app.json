@@ -6,7 +6,6 @@
     "orientation": "portrait",
     "icon": "./assets/forged-logo.png",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
     "scheme": "forged",
     "splash": {
       "image": "./assets/forged-logo.png",
@@ -17,7 +16,10 @@
       "supportsTablet": false,
       "bundleIdentifier": "com.forgedapp.forged",
       "appleTeamId": "YT3798448G",
-      "buildNumber": "1"
+      "buildNumber": "1",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "com.forgedapp.forged",
@@ -25,7 +27,6 @@
         "foregroundImage": "./assets/forged-logo-android-adaptive.png",
         "backgroundColor": "#4A6741"
       },
-      "edgeToEdgeEnabled": true,
       "versionCode": 1
     },
     "plugins": [
@@ -49,6 +50,12 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "cac2d298-13a8-4b9f-99ce-bfe4ba1e2ef7"
+      }
     }
   }
 }
