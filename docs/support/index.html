@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Support — Forged</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --gold: #C8A84B;
+      --gold-light: #E8D07A;
+      --forest: #4A6741;
+      --ink: #2C2416;
+      --umber: #5C4F38;
+      --dust: #8B7A5E;
+      --parchment: #F9F5EC;
+      --cream: #EDE8D8;
+      --surface: #FFFFFF;
+      --border: rgba(44,36,22,0.12);
+    }
+
+    body {
+      font-family: Georgia, 'Times New Roman', serif;
+      background: var(--parchment);
+      color: var(--ink);
+      line-height: 1.7;
+      padding: 0;
+    }
+
+    header {
+      background: var(--forest);
+      padding: 32px 24px;
+      text-align: center;
+    }
+
+    .logo {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--gold-light);
+      letter-spacing: 0.5px;
+      text-decoration: none;
+      display: inline-block;
+      margin-bottom: 4px;
+    }
+
+    .logo-sub {
+      font-size: 14px;
+      color: rgba(255,255,255,0.6);
+      letter-spacing: 0.3px;
+    }
+
+    .container {
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 48px 24px 80px;
+    }
+
+    h1 {
+      font-size: 30px;
+      color: var(--ink);
+      margin-bottom: 8px;
+    }
+
+    .page-sub {
+      font-size: 16px;
+      color: var(--dust);
+      margin-bottom: 48px;
+    }
+
+    h2 {
+      font-size: 18px;
+      color: var(--ink);
+      margin-bottom: 12px;
+      margin-top: 40px;
+    }
+
+    p {
+      font-size: 15px;
+      color: var(--umber);
+      margin-bottom: 16px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      padding: 28px 24px;
+      margin-bottom: 24px;
+    }
+
+    .card h2 {
+      margin-top: 0;
+    }
+
+    .faq-item {
+      border-bottom: 1px solid var(--border);
+      padding: 20px 0;
+    }
+
+    .faq-item:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .faq-q {
+      font-size: 15px;
+      font-weight: bold;
+      color: var(--ink);
+      margin-bottom: 8px;
+    }
+
+    .faq-a {
+      font-size: 15px;
+      color: var(--umber);
+      margin: 0;
+    }
+
+    .contact-email {
+      display: inline-block;
+      margin-top: 8px;
+      font-size: 16px;
+      color: var(--forest);
+      text-decoration: none;
+      border-bottom: 1.5px solid var(--gold);
+      padding-bottom: 1px;
+    }
+
+    .contact-email:hover {
+      color: var(--ink);
+    }
+
+    .response-note {
+      font-size: 13px;
+      color: var(--dust);
+      margin-top: 8px;
+      margin-bottom: 0;
+    }
+
+    footer {
+      text-align: center;
+      padding: 32px 24px;
+      font-size: 13px;
+      color: var(--dust);
+      border-top: 1px solid var(--border);
+    }
+
+    footer a {
+      color: var(--dust);
+      text-decoration: none;
+      margin: 0 8px;
+    }
+
+    footer a:hover { color: var(--ink); }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --ink: #F0EAD8;
+        --umber: #C4B89A;
+        --dust: #7A6E58;
+        --parchment: #1C1912;
+        --cream: #231F17;
+        --surface: #2D2820;
+        --border: rgba(240,234,216,0.10);
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <a class="logo" href="../">⚒️ Forged</a>
+    <p class="logo-sub">Build habits that stick</p>
+  </header>
+
+  <div class="container">
+
+    <h1>Support</h1>
+    <p class="page-sub">We're here to help. Find answers below or get in touch.</p>
+
+    <!-- Contact -->
+    <div class="card">
+      <h2>Contact Us</h2>
+      <p>Have a question, found a bug, or want to share feedback? Send us an email and we'll get back to you.</p>
+      <a class="contact-email" href="mailto:support@yellowbikestudio.com">support@yellowbikestudio.com</a>
+      <p class="response-note">We typically respond within 1–2 business days.</p>
+    </div>
+
+    <!-- FAQ -->
+    <div class="card">
+      <h2>Frequently Asked Questions</h2>
+
+      <div class="faq-item">
+        <p class="faq-q">How do I restore my purchase?</p>
+        <p class="faq-a">Open Forged, tap the Settings tab, then tap the premium card and choose "Restore Purchase." Make sure you're signed in to the Apple ID you used to originally purchase Forged Premium.</p>
+      </div>
+
+      <div class="faq-item">
+        <p class="faq-q">I purchased Forged Premium but the app still shows the free tier. What do I do?</p>
+        <p class="faq-a">Go to Settings in the app and tap "Restore Purchase." If the issue persists, force-quit the app and relaunch it. If you're still having trouble, contact us at the email above.</p>
+      </div>
+
+      <div class="faq-item">
+        <p class="faq-q">Is Forged Premium a subscription?</p>
+        <p class="faq-a">No. Forged Premium is a one-time purchase of $3.99. You pay once and unlock all features forever — no recurring charges, no annual renewals.</p>
+      </div>
+
+      <div class="faq-item">
+        <p class="faq-q">How do I delete a habit?</p>
+        <p class="faq-a">Long-press any habit card on the Today screen to open the edit screen, then scroll down and tap "Delete Habit."</p>
+      </div>
+
+      <div class="faq-item">
+        <p class="faq-q">Can I back up or export my data?</p>
+        <p class="faq-a">Yes. Go to Settings and tap "Export Data" to download a JSON backup of all your habits and completion history. You can also import a backup from the same screen.</p>
+      </div>
+
+      <div class="faq-item">
+        <p class="faq-q">How do streaks work?</p>
+        <p class="faq-a">A streak counts the number of consecutive days you've completed a habit according to its schedule. Daily habits require a check-off every day. Weekly habits (e.g. 3x per week) require you to hit your target each week. Missing a scheduled day resets your streak.</p>
+      </div>
+
+      <div class="faq-item">
+        <p class="faq-q">How do I request a refund?</p>
+        <p class="faq-a">Purchases are processed by Apple. To request a refund, visit <a href="https://reportaproblem.apple.com" style="color: var(--forest);">reportaproblem.apple.com</a> and sign in with the Apple ID you used to purchase.</p>
+      </div>
+
+    </div>
+
+  </div>
+
+  <footer>
+    <p>
+      <a href="../privacy/">Privacy Policy</a>
+      <a href="../terms/">Terms of Service</a>
+    </p>
+    <p style="margin-top: 12px;">&copy; 2026 Yellow Bike Studio</p>
+  </footer>
+
+</body>
+</html>
