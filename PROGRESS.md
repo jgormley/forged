@@ -5,10 +5,10 @@
 
 ---
 
-## Current Status: Phase 3 in progress — in beta testing
+## Current Status: Phase 4 in progress — iOS submitted for App Store review
 
-Both iOS (TestFlight) and Android (Google Play internal testing) builds are live and working.
-Remaining work: paywall/freemium gate, widgets, store listing polish, final submission.
+iOS submitted for review. Android Play Store listing still needed before Android final submission.
+Remaining work: store listing polish (Android), screenshots, final Android submission.
 
 ---
 
@@ -99,13 +99,13 @@ Remaining work: paywall/freemium gate, widgets, store listing polish, final subm
 
 ---
 
-## 🔲 Phase 3 — Monetization (in progress)
+## ✅ Phase 3 — Monetization (COMPLETE)
 
 ### Analytics — PostHog ✅
 - [x] `src/analytics/posthog.ts` — singleton, `disabled: !key`, `posthog.debug()` in DEV
 - [x] `PostHogProvider` wrapping app — autocapture enabled (touches + app lifecycle), screen tracking disabled (RN v7 incompatibility)
 - [x] Events: `habit_created`, `habit_deleted`, `habit_completed`, `streak_milestone`, `onboarding_completed`, `theme_changed`, `notifications_toggled`
-- [ ] `ph-label` props on key interactive elements (autocapture labels)
+- [x] `ph-label` props on key interactive elements (autocapture labels)
 - [x] Remaining events: `paywall_viewed`, `purchase_completed`, `purchase_cancelled`
 
 ### RevenueCat ✅
@@ -113,6 +113,11 @@ Remaining work: paywall/freemium gate, widgets, store listing polish, final subm
 - [x] `configureRevenueCat()` called at module scope in `_layout.tsx`
 - [x] `src/hooks/usePremium.ts` — `isPremium`, `purchase()`, `restore()`, `canAddHabit()`, CustomerInfo listener
 - [x] `EXPO_PUBLIC_RC_API_KEY_IOS` + `EXPO_PUBLIC_RC_API_KEY_ANDROID` env vars set
+
+### Bug Fixes (Beta Round 3) ✅
+- [x] IAP purchase not unlocking premium — RC entitlement `forged_premium_lifetime` was missing product attachment; added iOS + Android products to entitlement in RC dashboard
+- [x] `purchase()` delayed refresh safety net added in `usePremium.ts` — re-fetches CustomerInfo 2s after purchase if entitlement not immediately present
+- [x] RC product-entitlement mapping verified end-to-end on physical device (local) and TestFlight
 
 ### Bug Fixes (Beta Round 2) ✅
 - [x] Year-at-a-glance heatmap not showing current week (#10) — fixed `startDate` calculation to anchor on current week's Sunday

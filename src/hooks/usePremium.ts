@@ -131,6 +131,16 @@ export function usePremium(): PremiumState {
         console.log('[RC] purchase() — isPremium:', premium, '(checking for:', ENTITLEMENT_ID, ')')
       }
       setIsPremium(premium)
+      // If the initial customerInfo doesn't show the entitlement (race condition
+      // with RC's server-side activation), do a fresh fetch after a short delay.
+      if (!premium) {
+        setTimeout(async () => {
+          const fresh = await Purchases.getCustomerInfo()
+          const freshPremium = isPremiumFromInfo(fresh)
+          if (__DEV__) console.log('[RC] purchase() — delayed refresh, isPremium:', freshPremium)
+          setIsPremium(freshPremium)
+        }, 2000)
+      }
       return premium
     } catch (e: unknown) {
       if (__DEV__) console.warn('[RC] purchase() error:', e)
