@@ -193,7 +193,7 @@ Remaining work: paywall/freemium gate, widgets, store listing polish, final subm
 - [ ] Google Play feature graphic + screenshots
 - [ ] App Store metadata (description, keywords, categories) — draft in `forged-project-context.md` Section 12
 - [x] Privacy Policy URL added in App Store Connect: `https://jgormley.github.io/forged/privacy/`
-- [ ] Complete Play Store listing (required before removing `releaseStatus: draft` from `eas.json`)
+- [ ] Complete Play Store listing (required before removing `releaseStatus: draft` from `eas.json`) — **remove `releaseStatus: "draft"` from `eas.json` Android submit config before final submission**
 - [ ] Final submission: iOS + Android
 - [ ] Create promo codes for friends and family 
 ---
@@ -238,3 +238,8 @@ Remaining work: paywall/freemium gate, widgets, store listing polish, final subm
 - `npx expo install` for Expo SDK packages
 - After any `app.json` plugin change: `npx expo prebuild --clean` then `npx expo run:ios`
 - `ios/` and `android/` are gitignored — regenerate with prebuild
+
+
+iOS Sandbox test user:
+josh+forgedtester@yellowbikestudio.com
+Forged42Test!
