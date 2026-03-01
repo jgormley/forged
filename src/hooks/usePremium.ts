@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Platform, DeviceEventEmitter } from 'react-native'
 import Purchases, { type CustomerInfo } from 'react-native-purchases'
+import * as Application from 'expo-application'
 
 const ENTITLEMENT_ID = 'forged_premium_lifetime'
 export const FREE_HABIT_LIMIT = 2
@@ -10,8 +11,16 @@ const RC_API_KEY_ANDROID = process.env.EXPO_PUBLIC_RC_API_KEY_ANDROID ?? ''
 
 let rcConfigured = false
 
+async function getStableUserId(): Promise<string> {
+  if (Platform.OS === 'ios') {
+    return (await Application.getIosIdForVendorAsync()) ?? 'anonymous'
+  } else {
+    return Application.androidId ?? 'anonymous'
+  }
+}
+
 // Call this once at app startup (module scope in _layout.tsx).
-export function configureRevenueCat() {
+export async function configureRevenueCat() {
   if (rcConfigured) return
   const key = Platform.OS === 'ios' ? RC_API_KEY_IOS : RC_API_KEY_ANDROID
   if (!key) {
@@ -20,6 +29,9 @@ export function configureRevenueCat() {
   }
   if (__DEV__) console.log('[RC] configure() — key prefix:', key.slice(0, 8))
   Purchases.configure({ apiKey: key })
+  const userId = await getStableUserId()
+  await Purchases.logIn(userId)
+  if (__DEV__) console.log('[RC] logged in with stable user ID:', userId)
   rcConfigured = true
 }
 
