@@ -320,7 +320,7 @@ export default function SettingsScreen() {
             </Text>
           </View>
           {!isPremium && (
-            <Pressable style={styles.premiumCta} onPress={() => router.push('/paywall')}>
+            <Pressable style={styles.premiumCta} onPress={() => router.push('/paywall')} ph-label="settings_upgrade_cta">
               <Text style={styles.premiumCtaText}>Unlock All ⚒️</Text>
             </Pressable>
           )}

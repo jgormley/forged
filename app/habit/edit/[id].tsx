@@ -172,11 +172,11 @@ export default function EditHabitScreen() {
         <View style={styles.header}>
           <View style={styles.dragHandle} />
           <View style={styles.headerRow}>
-            <Pressable onPress={() => router.back()} hitSlop={12}>
+            <Pressable onPress={() => router.back()} hitSlop={12} ph-label="edit_habit_cancel">
               <Text style={styles.cancelBtn}>Cancel</Text>
             </Pressable>
             <Text style={styles.headerTitle}>Edit Habit</Text>
-            <Pressable onPress={handleSave} disabled={!canSave || saving} hitSlop={12}>
+            <Pressable onPress={handleSave} disabled={!canSave || saving} hitSlop={12} ph-label="edit_habit_save">
               <Text style={[styles.saveBtn, (!canSave || saving) && styles.saveBtnDisabled]}>
                 {saving ? 'Saving…' : 'Save'}
               </Text>
@@ -360,6 +360,7 @@ export default function EditHabitScreen() {
             onPress={handleSave}
             disabled={!canSave || saving}
             style={[styles.cta, canSave && { backgroundColor: color, borderColor: 'transparent' }]}
+            ph-label="edit_habit_save_cta"
           >
             <Text style={[styles.ctaText, canSave && styles.ctaTextEnabled]}>
               {saving ? 'Saving…' : 'Save Changes'}
@@ -367,7 +368,7 @@ export default function EditHabitScreen() {
           </Pressable>
 
           {/* ── Delete ── */}
-          <Pressable onPress={handleDelete} style={styles.deleteBtn}>
+          <Pressable onPress={handleDelete} style={styles.deleteBtn} ph-label="delete_habit">
             <Text style={styles.deleteBtnText}>Delete Habit</Text>
           </Pressable>
 

@@ -114,7 +114,7 @@ export function HabitCard({
   }, [onLongPress])
 
   return (
-    <Pressable onPress={handlePress} onLongPress={handleLongPress} style={styles.pressable}>
+    <Pressable onPress={handlePress} onLongPress={handleLongPress} style={styles.pressable} ph-label="habit_toggle">
       <View style={styles.card}>
 
         {/* ── Color fill overlay ── */}

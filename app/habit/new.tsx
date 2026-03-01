@@ -181,11 +181,11 @@ export default function NewHabitScreen() {
         <View style={styles.header}>
           <View style={styles.dragHandle} />
           <View style={styles.headerRow}>
-            <Pressable onPress={() => router.back()} hitSlop={12}>
+            <Pressable onPress={() => router.back()} hitSlop={12} ph-label="new_habit_cancel">
               <Text style={styles.cancelBtn}>Cancel</Text>
             </Pressable>
             <Text style={styles.headerTitle}>New Habit</Text>
-            <Pressable onPress={handleSave} disabled={!canSave || saving} hitSlop={12}>
+            <Pressable onPress={handleSave} disabled={!canSave || saving} hitSlop={12} ph-label="new_habit_save">
               <Text style={[styles.createBtn, (!canSave || saving) && styles.createBtnDisabled]}>
                 {saving ? 'Saving…' : 'Create'}
               </Text>
@@ -371,6 +371,7 @@ export default function NewHabitScreen() {
             onPress={handleSave}
             disabled={!canSave || saving}
             style={[styles.cta, canSave && { backgroundColor: color, borderColor: 'transparent' }]}
+            ph-label="new_habit_create_cta"
           >
             <Text style={[styles.ctaText, canSave && styles.ctaTextEnabled]}>
               {saving ? 'Creating…' : 'Create Habit'}

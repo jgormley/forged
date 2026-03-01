@@ -122,7 +122,7 @@ function WelcomeScreen({ onNext, onSkip }: { onNext: () => void; onSkip: () => v
       </View>
 
       <View style={welcomeStyles.actions}>
-        <Pressable onPress={onNext} style={welcomeStyles.cta}>
+        <Pressable onPress={onNext} style={welcomeStyles.cta} ph-label="onboarding_get_started">
           <LinearGradient
             colors={['#E8D07A', '#C8A84B', '#9B7A28']}
             start={{ x: 0, y: 0 }}
@@ -133,7 +133,7 @@ function WelcomeScreen({ onNext, onSkip }: { onNext: () => void; onSkip: () => v
           </LinearGradient>
         </Pressable>
 
-        <Pressable onPress={onSkip} hitSlop={12} style={welcomeStyles.skipBtn}>
+        <Pressable onPress={onSkip} hitSlop={12} style={welcomeStyles.skipBtn} ph-label="onboarding_welcome_skip">
           <Text style={welcomeStyles.skipText}>Skip</Text>
         </Pressable>
       </View>
@@ -245,6 +245,7 @@ function HabitPickScreen({ onAutoAdvance, onSkip }: { onAutoAdvance: () => void;
             key={opt.emoji}
             onPress={() => handlePick(opt.preset)}
             style={pickStyles.optionRow}
+            ph-label={`onboarding_pick_${opt.preset ?? 'custom'}`}
           >
             <Text style={pickStyles.optionEmoji}>{opt.emoji}</Text>
             <Text style={pickStyles.optionLabel}>{opt.label}</Text>
@@ -253,7 +254,7 @@ function HabitPickScreen({ onAutoAdvance, onSkip }: { onAutoAdvance: () => void;
         ))}
       </View>
 
-      <Pressable onPress={onSkip} hitSlop={12} style={pickStyles.skipBtn}>
+      <Pressable onPress={onSkip} hitSlop={12} style={pickStyles.skipBtn} ph-label="onboarding_habit_pick_skip">
         <Text style={pickStyles.skipText}>Skip</Text>
       </Pressable>
     </View>
@@ -322,7 +323,7 @@ function CongratulationsScreen({ onDone }: { onDone: () => void }) {
         </Text>
       </View>
 
-      <Pressable onPress={onDone} style={congratsStyles.cta}>
+      <Pressable onPress={onDone} style={congratsStyles.cta} ph-label="onboarding_complete">
         <LinearGradient
           colors={['#E8D07A', '#C8A84B', '#9B7A28']}
           start={{ x: 0, y: 0 }}

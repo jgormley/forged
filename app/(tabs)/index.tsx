@@ -158,7 +158,7 @@ export default function TodayScreen() {
             <Text style={styles.emptyBody}>
               Add your first habit to begin building the life you want, one day at a time.
             </Text>
-            <Pressable style={styles.addButton} onPress={handleAddHabit}>
+            <Pressable style={styles.addButton} onPress={handleAddHabit} ph-label="add_habit_empty_state">
               <Text style={styles.addButtonText}>Forge Your First Habit</Text>
             </Pressable>
           </View>
@@ -176,7 +176,7 @@ export default function TodayScreen() {
               />
             ))}
 
-            <Pressable style={styles.addButton} onPress={handleAddHabit}>
+            <Pressable style={styles.addButton} onPress={handleAddHabit} ph-label="add_habit">
               <Text style={styles.addButtonText}>Forge a New Habit</Text>
             </Pressable>
           </>

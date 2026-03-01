@@ -27,6 +27,7 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
             style={styles.tab}
             onPress={() => navigation.navigate(name)}
             hitSlop={8}
+            ph-label={`tab_${label.toLowerCase()}`}
           >
             <Icon color={color} size={24} />
             <Text style={[styles.label, { color }]}>{label}</Text>

@@ -191,7 +191,7 @@ export function MilestoneModal() {
         <Animated.View style={[styles.backdrop, overlayStyle]} pointerEvents="none" />
 
         {/* Full-screen dismiss target */}
-        <Pressable style={styles.dismissArea} onPress={dismiss} />
+        <Pressable style={styles.dismissArea} onPress={dismiss} ph-label="milestone_dismiss_backdrop" />
 
         {/* Card */}
         <Pressable style={styles.cardWrapper} onPress={() => {}}>
@@ -219,7 +219,7 @@ export function MilestoneModal() {
             <Text style={styles.message}>{config.message}</Text>
 
             {/* ── CTA ── */}
-            <Pressable style={[styles.cta, { backgroundColor: color }]} onPress={dismiss}>
+            <Pressable style={[styles.cta, { backgroundColor: color }]} onPress={dismiss} ph-label="milestone_keep_forging">
               <Text style={styles.ctaText}>Keep Forging ⚒️</Text>
             </Pressable>
 

@@ -57,7 +57,7 @@ export default function PaywallScreen() {
   return (
     <SafeAreaView style={styles.root}>
       {/* ── Close button ── */}
-      <Pressable style={styles.closeBtn} onPress={handleClose} hitSlop={12}>
+      <Pressable style={styles.closeBtn} onPress={handleClose} hitSlop={12} ph-label="paywall_close">
         <Text style={styles.closeBtnText}>✕</Text>
       </Pressable>
 
@@ -92,6 +92,7 @@ export default function PaywallScreen() {
           style={styles.ctaBtn}
           onPress={handlePurchase}
           disabled={isPurchasing || isRestoring}
+          ph-label="paywall_purchase"
         >
           {isPurchasing
             ? <ActivityIndicator color="#2C2416" />
@@ -104,6 +105,7 @@ export default function PaywallScreen() {
           style={styles.restoreBtn}
           onPress={handleRestore}
           disabled={isPurchasing || isRestoring}
+          ph-label="paywall_restore"
         >
           {isRestoring
             ? <ActivityIndicator color="#8B7A5E" size="small" />
@@ -117,11 +119,11 @@ export default function PaywallScreen() {
 
         {/* ── Footer ── */}
         <View style={styles.footer}>
-          <Pressable onPress={() => router.push('/legal/privacy')}>
+          <Pressable onPress={() => router.push('/legal/privacy')} ph-label="paywall_privacy">
             <Text style={styles.footerLink}>Privacy Policy</Text>
           </Pressable>
           <Text style={styles.footerDot}>·</Text>
-          <Pressable onPress={() => router.push('/legal/terms')}>
+          <Pressable onPress={() => router.push('/legal/terms')} ph-label="paywall_terms">
             <Text style={styles.footerLink}>Terms of Service</Text>
           </Pressable>
         </View>
