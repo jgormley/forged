@@ -46,6 +46,7 @@
     "expo": "~55.0.4",
     "expo-application": "~55.0.8",
     "expo-asset": "~55.0.6",
+    "expo-clipboard": "~55.0.8",
     "expo-constants": "~55.0.6",
     "expo-crypto": "~55.0.8",
     "expo-dev-client": "~55.0.10",

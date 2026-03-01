@@ -3,7 +3,9 @@ import { router } from 'expo-router'
 import { StyleSheet, UnistylesRuntime } from 'react-native-unistyles'
 import { ScreenHeader } from '@/components/ScreenHeader'
 import { Pressable } from '@/components/Pressable'
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
+import * as Clipboard from 'expo-clipboard'
+import Purchases from 'react-native-purchases'
 import DateTimePicker from '@react-native-community/datetimepicker'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useNotificationSettingsStore } from '@/stores/notificationSettingsStore'
@@ -165,6 +167,8 @@ function parseHHMM(hhmm: string): Date {
 export default function SettingsScreen() {
   const [defaultReminderTime, setDefaultReminderTime] = useState<Date>(makeDefaultReminderDate)
   const [showTimePicker, setShowTimePicker] = useState(false)
+  const [userId, setUserId] = useState<string | null>(null)
+  const [copied, setCopied] = useState(false)
   const versionTaps = useRef(0)
 
   const habits           = useHabitsStore((s) => s.habits)
@@ -192,6 +196,18 @@ export default function SettingsScreen() {
       if (value) setDefaultReminderTime(parseHHMM(value))
     })
   }, [])
+
+  // Load RC App User ID for support display
+  useEffect(() => {
+    Purchases.getAppUserID().then(setUserId).catch(() => {})
+  }, [])
+
+  const handleCopyUserId = useCallback(async () => {
+    if (!userId) return
+    await Clipboard.setStringAsync(userId)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }, [userId])
 
   const handleReminderTimeChange = (date: Date) => {
     setDefaultReminderTime(date)
@@ -313,16 +329,31 @@ export default function SettingsScreen() {
 
       <ScrollView style={styles.body} contentContainerStyle={styles.bodyContent} showsVerticalScrollIndicator={false}>
         <View style={styles.premiumCard}>
-          <View>
-            <Text style={styles.premiumLabel}>{isPremium ? 'Forged Premium' : 'Forged Free'}</Text>
-            <Text style={[styles.premiumSub, isPremium && styles.premiumSubUnlocked]}>
-              {isPremium ? 'All features unlocked' : `Up to ${FREE_HABIT_LIMIT} habits`}
-            </Text>
+          <View style={styles.premiumCardTop}>
+            <View>
+              <Text style={styles.premiumLabel}>{isPremium ? 'Forged Premium' : 'Forged Free'}</Text>
+              <Text style={[styles.premiumSub, isPremium && styles.premiumSubUnlocked]}>
+                {isPremium ? 'All features unlocked' : `Up to ${FREE_HABIT_LIMIT} habits`}
+              </Text>
+            </View>
+            {!isPremium && (
+              <Pressable style={styles.premiumCta} onPress={() => router.push('/paywall')} ph-label="settings_upgrade_cta">
+                <Text style={styles.premiumCtaText}>Unlock All ⚒️</Text>
+              </Pressable>
+            )}
           </View>
-          {!isPremium && (
-            <Pressable style={styles.premiumCta} onPress={() => router.push('/paywall')} ph-label="settings_upgrade_cta">
-              <Text style={styles.premiumCtaText}>Unlock All ⚒️</Text>
-            </Pressable>
+          {isPremium && userId && (
+            <View style={styles.userIdRow}>
+              <Text style={styles.userIdLabel}>Support ID</Text>
+              <View style={styles.userIdValueRow}>
+                <Text style={styles.userIdValue} numberOfLines={1} ellipsizeMode="middle">{userId}</Text>
+                <Pressable onPress={handleCopyUserId} hitSlop={8} style={styles.copyBtn} ph-label="settings_copy_user_id">
+                  <Text style={[styles.copyBtnText, copied && styles.copyBtnTextCopied]}>
+                    {copied ? 'Copied!' : 'Copy'}
+                  </Text>
+                </Pressable>
+              </View>
+            </View>
           )}
         </View>
 
@@ -440,15 +471,57 @@ const styles = StyleSheet.create((theme) => ({
   },
 
   premiumCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
     backgroundColor: theme.colors.accentSubtle,
     borderRadius: theme.radius.md,
     padding: theme.spacing.md,
     borderWidth: 1,
     borderColor: theme.colors.border,
     marginBottom: theme.spacing.xl,
+    gap: theme.spacing.md,
+  },
+  premiumCardTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  userIdRow: {
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.borderSubtle,
+    paddingTop: theme.spacing.sm,
+    gap: 4,
+  },
+  userIdLabel: {
+    fontFamily: theme.font.family.bodyMedium,
+    fontSize: theme.font.size.xs,
+    color: theme.colors.textTertiary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  userIdValueRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+  },
+  userIdValue: {
+    fontFamily: theme.font.family.body,
+    fontSize: theme.font.size.xs,
+    color: theme.colors.textSecondary,
+    flex: 1,
+  },
+  copyBtn: {
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: 3,
+    borderRadius: theme.radius.xs,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  copyBtnText: {
+    fontFamily: theme.font.family.bodyMedium,
+    fontSize: theme.font.size.xs,
+    color: theme.colors.textSecondary,
+  },
+  copyBtnTextCopied: {
+    color: theme.colors.successLight,
   },
   premiumLabel: {
     fontFamily: theme.font.family.displayMedium,
