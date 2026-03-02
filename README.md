@@ -159,6 +159,39 @@ After the build, App Store submission requires manual review approval in App Sto
 
 ---
 
+## OTA Updates (EAS Update)
+
+OTA updates push a new JS bundle to users instantly — no App Store review, no new build required. Only works for **pure JS/TS changes** (UI fixes, logic, copy, assets). Any change that touches native code (new native module, `app.json` plugin change, SDK upgrade) requires a full store build instead.
+
+### Ship an OTA update
+
+```bash
+eas update --channel production --message "Fix: brief description of change"
+```
+
+### Preview channel (TestFlight / internal testing builds)
+
+```bash
+eas update --channel preview --message "Fix: brief description"
+```
+
+### What can be OTA'd
+- Bug fixes, UI tweaks, copy changes
+- New screens or features (pure JS)
+- Asset updates
+
+### What requires a full store build
+- Installing a new native module
+- Changing `app.json` plugins
+- Expo SDK upgrades
+- Any change to `ios/` or `android/` native config
+
+### Runtime version policy
+
+The project uses `appVersion` as the runtime version policy. This means an OTA update published against version `1.0.0` will only be delivered to builds with that same app version — preventing mismatched updates from reaching users on older or newer binary versions.
+
+---
+
 ## Project Structure
 
 ```

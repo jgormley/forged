@@ -163,7 +163,7 @@ Remaining work: store listing polish (Android), screenshots, final Android submi
 - [x] Delete all data from Settings (with confirmation Alert) — cascades to completions, resets to onboarding
 
 ### Analytics Polish
-- [ ] `ph-label` props on key interactive elements (HabitCard toggle, add buttons, onboarding options, settings rows, habit form buttons)
+- [x] `ph-label` props on key interactive elements (HabitCard toggle, add buttons, onboarding options, settings rows, habit form buttons)
 
 ### Legal Pages (GitHub Pages) ✅
 - [x] `docs/privacy/index.html` — Privacy Policy
