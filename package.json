@@ -1,6 +1,6 @@
 {
   "name": "forged",
-  "version": "1.1.0",
+  "version": "1.1.2",
   "main": "index.ts",
   "scripts": {
     "start": "expo start",
@@ -10,7 +10,8 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "test": "jest",
-    "test:watch": "jest --watch"
+    "test:watch": "jest --watch",
+    "version:bump": "node scripts/bump-version.js"
   },
   "jest": {
     "projects": [

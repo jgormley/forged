@@ -28,7 +28,7 @@ A React Native habit tracker for iOS and Android. Core mechanic: streaks. Moneti
 ### 1. Install dependencies
 
 ```bash
-npm install --legacy-peer-deps
+npm install
 ```
 
 ### 2. Set up environment variables
@@ -114,24 +114,32 @@ For faster local IAP testing, use a **StoreKit Configuration File**:
 
 ## Deploying to TestFlight & Google Play Internal Testing
 
-Uses EAS Build with the `production` profile. Build numbers are auto-incremented by EAS (`appVersionSource: remote`).
+Uses EAS Build with the `production` profile. Build numbers (`buildNumber` / `versionCode`) are auto-incremented by EAS (`appVersionSource: remote`, `autoIncrement: true`).
+
+**Important:** The app version string (e.g. `1.1.0`) must be unique for each App Store / Play Store submission. EAS does not auto-increment this — run the bump script before each production build:
+
+```bash
+npm run version:bump && eas build --profile production --platform all --auto-submit
+```
+
+The `version:bump` script increments the patch version in both `app.json` and `package.json` (e.g. `1.1.0 → 1.1.1 → 1.1.2`).
 
 ### Build + submit both platforms
 
 ```bash
-eas build --profile production --platform all --auto-submit
+npm run version:bump && eas build --profile production --platform all --auto-submit
 ```
 
 ### iOS only → TestFlight
 
 ```bash
-eas build --profile production --platform ios --auto-submit
+npm run version:bump && eas build --profile production --platform ios --auto-submit
 ```
 
 ### Android only → Google Play internal testing
 
 ```bash
-eas build --profile production --platform android --auto-submit
+npm run version:bump && eas build --profile production --platform android --auto-submit
 ```
 
 The `--auto-submit` flag uses the submit config in `eas.json` to push directly to TestFlight (iOS) and the Google Play internal testing track (Android) after the build completes.
@@ -152,7 +160,7 @@ The `--auto-submit` flag uses the submit config in `eas.json` to push directly t
 Same command as above — the `production` EAS profile handles both stores:
 
 ```bash
-eas build --profile production --platform all --auto-submit
+npm run version:bump && eas build --profile production --platform all --auto-submit
 ```
 
 After the build, App Store submission requires manual review approval in App Store Connect. Google Play can be promoted from internal → production track in the Play Console.
@@ -225,7 +233,7 @@ assets/                 # icons, images
 - **Reanimated 4:** Worklets plugin is `react-native-worklets/plugin` — NOT `react-native-reanimated/plugin`.
 - **Zustand:** Always select primitive values individually — never return objects from selectors (causes infinite re-render).
 - **CNG:** `ios/` and `android/` are gitignored. Regenerate with `npx expo prebuild --clean`. After any native module install, rebuild with `npx expo run:ios`.
-- **npm:** Always use `npm install --legacy-peer-deps` for third-party packages.
+- **npm:** `npm install` works without `--legacy-peer-deps` as of Expo SDK 55.
 
 ---
 
