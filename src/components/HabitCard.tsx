@@ -34,6 +34,13 @@ export interface HabitCardProps {
 // Sub-components
 // ─────────────────────────────────────────────────────────────────────────────
 
+/** Convert "HH:MM" (24hr) to "8:00 AM" display format */
+function formatReminderTime(hhmm: string): string {
+  const [h, m] = hhmm.split(':').map(Number)
+  const ampm = h >= 12 ? 'PM' : 'AM'
+  return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${ampm}`
+}
+
 const WEEK_INDICES = [0, 1, 2, 3, 4, 5, 6]
 
 function WeekDots({ dots, color }: { dots: boolean[]; color: string }) {
@@ -131,11 +138,17 @@ export function HabitCard({
           <Text style={styles.emoji}>{habit.icon}</Text>
         </View>
 
-        {/* ── Name + week dots ── */}
+        {/* ── Name + reminder + week dots ── */}
         <View style={styles.info}>
           <Text style={styles.name} numberOfLines={1}>
             {habit.name}
           </Text>
+          {habit.reminderTime ? (
+            <View style={styles.reminderRow}>
+              <Text style={styles.reminderIcon}>🕐</Text>
+              <Text style={styles.reminderText}>{formatReminderTime(habit.reminderTime)}</Text>
+            </View>
+          ) : null}
           <WeekDots dots={weekDots} color={habit.color} />
         </View>
 
@@ -214,6 +227,21 @@ const styles = StyleSheet.create((theme) => ({
     fontFamily: theme.font.family.displayMedium,
     fontSize: theme.font.size.md,
     color: theme.colors.text,
+  },
+
+  reminderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.xs,
+    marginBottom: theme.spacing.xs,
+  },
+  reminderIcon: {
+    fontSize: 14,
+  },
+  reminderText: {
+    fontFamily: theme.font.family.body,
+    fontSize: theme.font.size.sm,
+    color: theme.colors.textTertiary,
   },
 
   weekRow: {

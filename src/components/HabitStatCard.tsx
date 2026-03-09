@@ -1,13 +1,13 @@
-import { View, Text, StyleSheet as RNStyleSheet } from 'react-native'
-import { useMemo } from 'react'
+import { View, Text, ScrollView, useWindowDimensions } from 'react-native'
+import { Pressable } from '@/components/Pressable'
+import { useMemo, useRef, useCallback } from 'react'
 import { StyleSheet, useUnistyles } from 'react-native-unistyles'
-import { CartesianChart, Line } from 'victory-native'
-import { useFont } from '@shopify/react-native-skia'
 import type { HabitWithFrequency } from '@/stores/habitsStore'
 import {
   calculateCurrentStreak,
   getCompletionRate,
 } from '@/utils/streak'
+import { toDateKey } from '@/stores/completionsStore'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -17,13 +17,30 @@ interface HabitStatCardProps {
   habit: HabitWithFrequency
   /** All-time completion dates for this habit (passed from parent's live query) */
   completionDates: Date[]
+  /** Long-press handler (e.g. to edit the habit) */
+  onLongPress?: () => void
 }
 
-// Chart shows up to 12 weekly data points, limited to the habit's actual age
-type ChartPoint = { week: number; rate: number }
+interface CalendarDay {
+  key: string        // YYYY-MM-DD
+  dayNum: number     // 1-31
+  dayName: string    // "Mon", "Tue", etc.
+  month: string      // "Jan", "Feb", etc.
+  completed: boolean
+  isFirstOfMonth: boolean
+}
 
-const MAX_CHART_WEEKS = 12
-const AXIS_FONT_SIZE = 9
+const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+const DAY_CELL_WIDTH = 36
+const DAY_CELL_GAP = 6
+
+/** Convert "HH:MM" (24hr) to "8:00 AM" display format */
+function formatReminderTime(hhmm: string): string {
+  const [h, m] = hhmm.split(':').map(Number)
+  const ampm = h >= 12 ? 'PM' : 'AM'
+  return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${ampm}`
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Sub-component: stat chip
@@ -50,15 +67,10 @@ function StatChip({
 // HabitStatCard
 // ─────────────────────────────────────────────────────────────────────────────
 
-export function HabitStatCard({ habit, completionDates }: HabitStatCardProps) {
+export function HabitStatCard({ habit, completionDates, onLongPress }: HabitStatCardProps) {
   const { theme } = useUnistyles()
-
-  // Load CrimsonPro for axis labels — local .ttf bundled with app, no async delay
-  const axisFont = useFont(
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    require('@expo-google-fonts/crimson-pro/400Regular/CrimsonPro_400Regular.ttf'),
-    AXIS_FONT_SIZE,
-  )
+  const scrollRef = useRef<ScrollView>(null)
+  const { width: screenWidth } = useWindowDimensions()
 
   const today = useMemo(() => {
     const d = new Date()
@@ -94,87 +106,120 @@ export function HabitStatCard({ habit, completionDates }: HabitStatCardProps) {
 
   const total = completionDates.length
 
-  // Number of weekly buckets to show — driven by the oldest completion.
-  // No upper cap: habits older than MAX_CHART_WEEKS show all-time data.
-  // Minimum 2 so CartesianChart always has enough points to draw a line.
-  const chartWeeks = useMemo(() => {
-    if (completionDates.length === 0) return 2
-    const oldest = completionDates.reduce((min, d) => (d < min ? d : min), completionDates[0]!)
-    const daysSinceOldest = Math.floor((today.getTime() - oldest.getTime()) / (1000 * 60 * 60 * 24))
-    return Math.max(2, Math.ceil((daysSinceOldest + 1) / 7))
-  }, [completionDates, today])
+  // Build calendar day data — go back to whichever is earlier: creation date or oldest completion
+  const calendarDays = useMemo<CalendarDay[]>(() => {
+    const completedKeys = new Set(completionDates.map(toDateKey))
 
-  // Chart: one data point per week spanning chartWeeks weeks back from today
-  const chartData = useMemo<ChartPoint[]>(() => {
-    return Array.from({ length: chartWeeks }, (_, w) => {
-      const weekEnd = new Date(today)
-      weekEnd.setDate(weekEnd.getDate() - (chartWeeks - 1 - w) * 7)
-      const rate = getCompletionRate(completionDates, habit.frequency, 7, weekEnd)
-      return { week: w + 1, rate: Math.round(rate * 100) }
-    })
-  }, [completionDates, habit.frequency, today, chartWeeks])
+    let daysSinceOldest = daysSinceCreation
+    for (const d of completionDates) {
+      const dStart = new Date(d)
+      dStart.setHours(0, 0, 0, 0)
+      const diff = Math.floor((today.getTime() - dStart.getTime()) / (1000 * 60 * 60 * 24))
+      if (diff > daysSinceOldest) daysSinceOldest = diff
+    }
 
-  const chartCaption = chartWeeks > MAX_CHART_WEEKS
-    ? 'All time'
-    : chartWeeks <= 1
-      ? 'This week'
-      : `Last ${chartWeeks} weeks`
+    const totalDays = Math.max(7, daysSinceOldest + 1)
+    const days: CalendarDay[] = []
+
+    for (let i = 0; i < totalDays; i++) {
+      const date = new Date(today)
+      date.setDate(date.getDate() - (totalDays - 1 - i))
+      const key = toDateKey(date)
+      days.push({
+        key,
+        dayNum: date.getDate(),
+        dayName: DAY_NAMES[date.getDay()],
+        month: MONTH_NAMES[date.getMonth()],
+        completed: completedKeys.has(key),
+        isFirstOfMonth: date.getDate() === 1 || i === 0,
+      })
+    }
+    return days
+  }, [completionDates, today, daysSinceCreation])
+
+  // Scroll to end (most recent) on initial layout
+  const handleLayout = useCallback(() => {
+    // Estimate total content width vs visible width to decide if we need to scroll
+    const contentWidth = calendarDays.length * (DAY_CELL_WIDTH + DAY_CELL_GAP)
+    // Card has md padding on each side, so visible width is roughly screenWidth - padding*2 - border
+    const visibleWidth = screenWidth - 64
+    if (contentWidth > visibleWidth) {
+      scrollRef.current?.scrollToEnd({ animated: false })
+    }
+  }, [calendarDays.length, screenWidth])
+
+  // Track the visible month label based on scroll position
+  const visibleMonth = useMemo(() => {
+    // Default to the last day's month (since we scroll to end)
+    return calendarDays.length > 0 ? calendarDays[calendarDays.length - 1].month : ''
+  }, [calendarDays])
 
   return (
     <View style={[styles.card, { borderLeftColor: habit.color }]}>
-      {/* ── Header: icon + name */}
-      <View style={styles.header}>
-        <Text style={styles.icon}>{habit.icon}</Text>
-        <Text style={styles.name} numberOfLines={1}>{habit.name}</Text>
-      </View>
+      <Pressable onLongPress={onLongPress}>
+        {/* ── Header: icon + name */}
+        <View style={styles.header}>
+          <Text style={styles.icon}>{habit.icon}</Text>
+          <Text style={styles.name} numberOfLines={1}>{habit.name}</Text>
+        </View>
 
-      {/* ── Stat chips */}
-      <View style={styles.chipRow}>
-        <StatChip value={String(currentStreak)} label="Streak" color={habit.color} />
-        <View style={styles.chipDivider} />
-        <StatChip value={`${forgeRate}%`} label="Forge Rate" />
-        <View style={styles.chipDivider} />
-        <StatChip value={String(total)} label="Total" />
-      </View>
+        {/* ── Reminder time */}
+        {habit.reminderTime ? (
+          <View style={styles.reminderRow}>
+            <Text style={styles.reminderIcon}>🕐</Text>
+            <Text style={styles.reminderText}>{formatReminderTime(habit.reminderTime)}</Text>
+          </View>
+        ) : null}
 
-      {/* ── Line chart
-            padding.top = breathing room so the line isn't clipped when rate=100
-            padding.right = space for the y-axis labels drawn outside the plot area */}
-      <View style={styles.chartWrap}>
-        <CartesianChart
-          data={chartData}
-          xKey="week"
-          yKeys={['rate']}
-          domain={{ y: [0, 110] }}
-          padding={{ top: 4, right: 32 }}
-          frame={{
-            lineWidth: { top: 0, right: 0, bottom: RNStyleSheet.hairlineWidth, left: 0 },
-            lineColor: theme.colors.borderSubtle,
-          }}
-          yAxis={[{
-            font: axisFont,
-            axisSide: 'right',
-            tickValues: [0, 50, 100],
-            formatYLabel: (v) => `${v}%`,
-            labelColor: theme.colors.textTertiary,
-            lineColor: theme.colors.borderSubtle,
-            lineWidth: RNStyleSheet.hairlineWidth,
-            labelOffset: 6,
-          }]}
+        {/* ── Stat chips */}
+        <View style={styles.chipRow}>
+          <StatChip value={String(currentStreak)} label="Streak" color={habit.color} />
+          <View style={styles.chipDivider} />
+          <StatChip value={`${forgeRate}%`} label="Forge Rate" />
+          <View style={styles.chipDivider} />
+          <StatChip value={String(total)} label="Total" />
+        </View>
+      </Pressable>
+
+      {/* ── Horizontal scrolling calendar */}
+      <View style={styles.calendarWrap}>
+        <Text style={styles.calendarMonth}>{visibleMonth}</Text>
+        <ScrollView
+          ref={scrollRef}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          onLayout={handleLayout}
+          contentContainerStyle={styles.calendarContent}
         >
-          {({ points }) => (
-            <Line
-              points={points.rate}
-              color={habit.color}
-              strokeWidth={1.5}
-              curveType="natural"
-            />
-          )}
-        </CartesianChart>
+          {calendarDays.map((day) => (
+            <View key={day.key} style={styles.calendarDay}>
+              {day.isFirstOfMonth ? (
+                <Text style={styles.calendarDayMonth}>{day.month}</Text>
+              ) : (
+                <View style={styles.calendarDayMonthSpacer} />
+              )}
+              <Text style={styles.calendarDayName}>{day.dayName}</Text>
+              <View
+                style={[
+                  styles.calendarDayBox,
+                  day.completed
+                    ? { backgroundColor: habit.color }
+                    : styles.calendarDayBoxIncomplete,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.calendarDayNum,
+                    day.completed && styles.calendarDayNumCompleted,
+                  ]}
+                >
+                  {day.dayNum}
+                </Text>
+              </View>
+            </View>
+          ))}
+        </ScrollView>
       </View>
-
-      {/* ── Chart x-axis label */}
-      <Text style={styles.chartCaption}>{chartCaption}</Text>
     </View>
   )
 }
@@ -215,6 +260,24 @@ const styles = StyleSheet.create((theme) => ({
     flex: 1,
   },
 
+  // ── Reminder — left padding aligns with habit name (md + icon 20 + gap sm)
+  reminderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.xs,
+    paddingLeft: theme.spacing.md + 20 + theme.spacing.sm,
+    paddingRight: theme.spacing.md,
+    paddingBottom: theme.spacing.sm,
+  },
+  reminderIcon: {
+    fontSize: 14,
+  },
+  reminderText: {
+    fontFamily: theme.font.family.body,
+    fontSize: theme.font.size.sm,
+    color: theme.colors.textTertiary,
+  },
+
   // ── Stat chips
   chipRow: {
     flexDirection: 'row',
@@ -252,19 +315,63 @@ const styles = StyleSheet.create((theme) => ({
     backgroundColor: theme.colors.borderSubtle,
   },
 
-  // ── Chart
-  // Height increased to 80 so the 10px top padding doesn't make the plot area feel cramped
-  chartWrap: {
-    height: 80,
-    marginHorizontal: theme.spacing.md,
+  // ── Calendar
+  calendarWrap: {
+    marginTop: theme.spacing.xs,
+    paddingBottom: theme.spacing.md,
   },
-  chartCaption: {
+  calendarMonth: {
+    fontFamily: theme.font.family.bodySemiBold,
+    fontSize: theme.font.size.xs,
+    color: theme.colors.textTertiary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    textAlign: 'right',
+    paddingHorizontal: theme.spacing.md,
+    marginBottom: theme.spacing.xs,
+  },
+  calendarContent: {
+    paddingHorizontal: theme.spacing.md,
+    gap: DAY_CELL_GAP,
+  },
+  calendarDay: {
+    alignItems: 'center',
+    width: DAY_CELL_WIDTH,
+  },
+  calendarDayMonth: {
+    fontFamily: theme.font.family.bodyMedium,
+    fontSize: 9,
+    color: theme.colors.textTertiary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
+    marginBottom: 2,
+  },
+  calendarDayMonthSpacer: {
+    height: 9 + 2, // match calendarDayMonth fontSize + marginBottom
+  },
+  calendarDayName: {
     fontFamily: theme.font.family.body,
     fontSize: theme.font.size.xs,
     color: theme.colors.textTertiary,
-    textAlign: 'right',
-    paddingHorizontal: theme.spacing.md,
-    paddingBottom: theme.spacing.sm,
-    marginTop: 2,
+    marginBottom: theme.spacing.xs,
+  },
+  calendarDayBox: {
+    width: DAY_CELL_WIDTH,
+    height: DAY_CELL_WIDTH,
+    borderRadius: theme.radius.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  calendarDayBoxIncomplete: {
+    backgroundColor: theme.colors.surfaceAlt,
+  },
+  calendarDayNum: {
+    fontFamily: theme.font.family.bodyMedium,
+    fontSize: theme.font.size.sm,
+    color: theme.colors.textSecondary,
+  },
+  calendarDayNumCompleted: {
+    color: theme.colors.textInverse,
+    fontFamily: theme.font.family.bodySemiBold,
   },
 }))

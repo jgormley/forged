@@ -5,7 +5,6 @@ import { router, useFocusEffect } from 'expo-router'
 import { ScreenHeader } from '@/components/ScreenHeader'
 import { HeatmapCalendar } from '@/components/HeatmapCalendar'
 import { HabitStatCard } from '@/components/HabitStatCard'
-import { Pressable } from '@/components/Pressable'
 import { useHabitsStore } from '@/stores/habitsStore'
 import { toDateKey } from '@/stores/completionsStore'
 import { db } from '@/db/client'
@@ -216,15 +215,12 @@ export default function ProgressScreen() {
           </View>
         ) : (
           habits.map((habit) => (
-            <Pressable
+            <HabitStatCard
               key={habit.id}
+              habit={habit}
+              completionDates={completionsByHabit.get(habit.id) ?? []}
               onLongPress={() => router.push(`/habit/edit/${habit.id}`)}
-            >
-              <HabitStatCard
-                habit={habit}
-                completionDates={completionsByHabit.get(habit.id) ?? []}
-              />
-            </Pressable>
+            />
           ))
         )}
 

@@ -1,5 +1,6 @@
 import { View, Text, ScrollView, Alert, Platform } from 'react-native'
 import { router } from 'expo-router'
+import * as StoreReview from 'expo-store-review'
 import { StyleSheet, UnistylesRuntime } from 'react-native-unistyles'
 import { ScreenHeader } from '@/components/ScreenHeader'
 import { Pressable } from '@/components/Pressable'
@@ -401,7 +402,11 @@ export default function SettingsScreen() {
         </SettingsSection>
 
         <SettingsSection title="About">
-          <SettingsRow label="Rate Forged" phLabel="settings_rate_app" />
+          <SettingsRow label="Rate Forged" phLabel="settings_rate_app" onPress={async () => {
+            if (await StoreReview.hasAction()) {
+              await StoreReview.requestReview()
+            }
+          }} />
           <SettingsRow label="Privacy Policy" phLabel="settings_privacy_policy" onPress={() => router.push('/legal/privacy')} />
           <SettingsRow label="Terms of Service" phLabel="settings_terms" onPress={() => router.push('/legal/terms')} />
           <SettingsRow label="Version" value="1.0.0" chevron={false} phLabel="settings_version" onPress={handleVersionTap} />

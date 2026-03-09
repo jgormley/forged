@@ -15,7 +15,7 @@ async function getStableUserId(): Promise<string> {
   if (Platform.OS === 'ios') {
     return (await Application.getIosIdForVendorAsync()) ?? 'anonymous'
   } else {
-    return Application.androidId ?? 'anonymous'
+    return (await Application.getAndroidId()) ?? 'anonymous'
   }
 }
 
