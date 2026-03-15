@@ -170,8 +170,8 @@ Remaining work: store listing polish (Android), screenshots, final Android submi
 - [x] `docs/terms/index.html` — Terms of Service
 - [x] `docs/index.html` — landing page linking both
 - [x] GitHub Pages enabled from `docs/` on `main` branch
-- **Privacy Policy URL:** `https://jgormley.github.io/forged/privacy/`
-- **Terms of Service URL:** `https://jgormley.github.io/forged/terms/`
+- **Privacy Policy URL:** `https://forged.yellowbikestudio.com/privacy/`
+- **Terms of Service URL:** `https://forged.yellowbikestudio.com/terms/`
 
 ### EAS Build & Store Setup ✅
 - [x] EAS CLI installed, `eas login`, project linked (`projectId` in `app.json`)
@@ -197,7 +197,7 @@ Remaining work: store listing polish (Android), screenshots, final Android submi
 - [ ] App Store screenshots (6.7", 6.1", iPad 12.9")
 - [ ] Google Play feature graphic + screenshots
 - [ ] App Store metadata (description, keywords, categories) — draft in `forged-project-context.md` Section 12
-- [x] Privacy Policy URL added in App Store Connect: `https://jgormley.github.io/forged/privacy/`
+- [x] Privacy Policy URL added in App Store Connect: `https://forged.yellowbikestudio.com/privacy/`
 - [ ] Complete Play Store listing (required before removing `releaseStatus: draft` from `eas.json`) — **remove `releaseStatus: "draft"` from `eas.json` Android submit config before final submission**
 - [ ] Final submission: iOS + Android
 - [ ] Create promo codes for friends and family 

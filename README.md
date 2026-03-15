@@ -239,5 +239,5 @@ assets/                 # icons, images
 
 ## Legal
 
-- Privacy Policy: https://jgormley.github.io/forged/privacy/
-- Terms of Service: https://jgormley.github.io/forged/terms/
+- Privacy Policy: https://forged.yellowbikestudio.com/privacy/
+- Terms of Service: https://forged.yellowbikestudio.com/terms/
