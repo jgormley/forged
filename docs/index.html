@@ -3,6 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-9T5Y7QG2WY"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-9T5Y7QG2WY');
+</script>
 <title>Forged — Build the Life You Mean to Live</title>
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
@@ -1443,7 +1451,7 @@ footer {
 
     <div class="hero-cta-group" id="download" style="scroll-margin-top:80px">
       <div class="store-btns">
-        <a href="https://apps.apple.com/us/app/forged-habit-builder/id6759588394" target="_blank" rel="noopener" class="btn-store">
+        <a href="https://apps.apple.com/us/app/forged-habit-builder/id6759588394" target="_blank" rel="noopener" class="btn-store" onclick="gtag('event','store_click',{store:'app_store'})">
         <span class="btn-store-icon">🍎</span>
           <span class="btn-store-text">
             <small>Download on the</small>
@@ -1970,7 +1978,7 @@ footer {
   </p>
 
   <div class="final-btns reveal d3">
-    <a href="https://apps.apple.com/us/app/forged-habit-builder/id6759588394" target="_blank" rel="noopener" class="btn-store">
+    <a href="https://apps.apple.com/us/app/forged-habit-builder/id6759588394" target="_blank" rel="noopener" class="btn-store" onclick="gtag('event','store_click',{store:'app_store'})">
         <span class="btn-store-icon">🍎</span>
       <span class="btn-store-text">
         <small>Download on the</small>
@@ -2059,6 +2067,7 @@ buildHeatmap('hm1', 16, goldPalette);
 /* Android coming soon toast */
 function showAndroidToast(e) {
   e.preventDefault();
+  gtag('event', 'store_click', { store: 'google_play' });
   const toast = document.getElementById('android-toast');
   toast.classList.add('show');
   clearTimeout(window._toastTimer);
