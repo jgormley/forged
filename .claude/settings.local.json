@@ -268,7 +268,27 @@
       "Bash(eas --version 2>/dev/null || npx eas-cli --version 2>/dev/null)",
       "Bash(eas build:configure --help 2>&1 | grep -i \"autoIncrement\" || eas build --help 2>&1 | grep -i \"auto-increment\\\\|version\" | head -5)",
       "Bash(node scripts/bump-version.js)",
-      "Bash(git add README.md app.json package.json eas.json scripts/bump-version.js .claude/settings.local.json)"
+      "Bash(git add README.md app.json package.json eas.json scripts/bump-version.js .claude/settings.local.json)",
+      "Bash(git commit -m \"$\\(cat <<'EOF'\nAdd version bump script; update README with build workflow\n\n- Add scripts/bump-version.js to increment patch version in app.json\n  and package.json before each EAS production build\n- Add npm run version:bump convenience script\n- Update README: document version bump workflow, remove --legacy-peer-deps\n- Revert eas.json autoIncrement to boolean \\(only valid option\\)\n- Bump version to 1.1.1 via bump script\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(gh api repos/github/spec-kit --jq '.description, .topics, .language, .default_branch' 2>/dev/null)",
+      "Bash(gh api repos/github/spec-kit/contents/ --jq '.[].name' 2>/dev/null)",
+      "Bash(gh api repos/github/spec-kit/contents/templates --jq '.[].name' 2>/dev/null)",
+      "Bash(gh api repos/github/spec-kit/contents/presets --jq '.[].name' 2>/dev/null)",
+      "Bash(gh api repos/github/spec-kit/contents/src --jq '.[].name' 2>/dev/null)",
+      "Bash(gh api repos/github/spec-kit/contents/templates/commands --jq '.[].name' 2>/dev/null)",
+      "Bash(gh api repos/github/spec-kit/contents/presets/scaffold --jq '.[].name' 2>/dev/null)",
+      "Bash(gh api repos/github/spec-kit/contents/templates/spec-template.md --jq '.content' 2>/dev/null | base64 -d)",
+      "Bash(gh api repos/github/spec-kit/contents/templates/constitution-template.md --jq '.content' 2>/dev/null | base64 -d)",
+      "Bash(gh api repos/github/spec-kit/contents/templates/plan-template.md --jq '.content' 2>/dev/null | base64 -d)",
+      "Bash(gh api repos/github/spec-kit/contents/templates/tasks-template.md --jq '.content' 2>/dev/null | base64 -d)",
+      "Bash(gh api repos/github/spec-kit/contents/templates/commands/specify.md --jq '.content' 2>/dev/null | base64 -d | head -80)",
+      "Bash(gh api repos/github/spec-kit/contents/templates/commands/implement.md --jq '.content' 2>/dev/null | base64 -d | head -80)",
+      "Bash(gh api repos/github/spec-kit/contents/templates/agent-file-template.md --jq '.content' 2>/dev/null | base64 -d | head -60)",
+      "Bash(gh api repos/github/spec-kit/contents/presets/scaffold/preset.yml --jq '.content' 2>/dev/null | base64 -d)",
+      "Bash(open docs/index.html)",
+      "Bash(cd /Users/josh/projects/forged/docs && python3 -m http.server 8080)",
+      "Bash(open http://localhost:8080)",
+      "Bash(git add docs/index.html docs/hero-banner.png docs/logo.png .claude/commands/speckit.*.md .claude/settings.local.json .specify/ && git commit -m \"$\\(cat <<'EOF'\nAdd marketing landing page and spec-kit setup\n\n- Replace placeholder index.html with full marketing site\n- Add hero banner and logo assets\n- Footer links point to existing privacy, terms, support pages\n- Fix nav logo click-to-top, download anchor scroll, footer contrast\n- Add spec-kit commands and project constitution\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nEOF\n\\)\")"
     ]
   }
 }
